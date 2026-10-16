@@ -15,7 +15,7 @@ const NAV = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { company, switchCompany } = useWorkspace();
+  const { company, switchCompany, viewAsStaff, setViewAsStaff } = useWorkspace();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data: companies = [], error, isLoading } = useQuery({
     queryKey: ["companies"],
@@ -75,7 +75,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
       </aside>
-      <main className="min-w-0 flex-1">{children}</main>
+      <main className="min-w-0 flex-1">
+        {viewAsStaff && (
+          <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-2 bg-warning px-4 py-3 text-base font-semibold text-warning-foreground">
+            <span>⚠️ Đang hóa thân xem dưới góc nhìn Nhân viên — mọi nút xóa dữ liệu đã bị khóa.</span>
+            <button onClick={() => setViewAsStaff(false)} className="rounded-lg bg-card px-3 py-1 text-card-foreground">Thoát chế độ</button>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }
