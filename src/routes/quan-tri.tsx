@@ -250,17 +250,50 @@ function KeysTab() {
     queryKey: ["quota", company?.id], enabled: !!company,
     queryFn: async () => (await supabase.from("companies").select("storage_quota_gb, drive_folder_id").eq("id", company!.id).single()).data,
   });
-  const run = async () => { setBusy(true); try { setRes(await check()); toast.success("Đã kiểm tra kết nối"); } catch { toast.error("Kiểm tra thất bại"); } finally { setBusy(false); } };
+  const save = useServerFn(saveApiKeys);
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [show, setShow] = useState<Record<string, boolean>>({});
+  const [one, setOne] = useState<string | null>(null);
+  const run = async () => { setBusy(true); try { setRes(await check({ data: {} })); toast.success("Đã kiểm tra kết nối"); } catch { toast.error("Kiểm tra thất bại"); } finally { setBusy(false); } };
+  const testOne = async (env: string) => {
+    setOne(env);
+    try {
+      const r = await check({ data: { only: env } });
+      setRes((p) => ({ ...(p ?? r), primary: r.primary, keys: [...(p?.keys ?? []).filter((x) => x.env !== env), ...r.keys] }));
+      toast[r.keys[0]?.active ? "success" : "error"](r.keys[0]?.active ? "Khóa đang hoạt động" : "Khóa không hoạt động hoặc chưa có");
+    } catch { toast.error("Kiểm tra thất bại"); } finally { setOne(null); }
+  };
+  const saveAll = async () => {
+    setBusy(true);
+    try { const r = await save({ data: vals }); setVals({}); toast.success(`Đã lưu ${r.saved} khóa`); setRes(await check({ data: {} })); }
+    catch { toast.error("Lưu thất bại"); } finally { setBusy(false); }
+  };
   return (
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <div className={box}>
         <h2 className="flex items-center gap-2 text-xl font-semibold"><KeyRound className="h-5 w-5 text-primary" />Chìa khóa AI</h2>
-        <p className="mt-2 rounded-lg bg-secondary p-3 text-sm">🔒 Bộ não JETBU AI ưu tiên khóa Gemini riêng, sau đó Groq; nếu chưa có khóa thì tự dùng AI tích hợp sẵn nên vẫn chạy ngay. Vì an toàn, khóa <b>không dán vào trang web</b> — nhắn trợ lý Lovable "thêm khóa Gemini" để mở ô nhập bảo mật.</p>
+        <p className="mt-2 rounded-lg bg-secondary p-3 text-sm">🔒 Khóa đã lưu được giữ bí mật trên máy chủ và không hiển thị lại. Dán khóa mới vào ô để thay thế. Nhà cung cấp ưu tiên: <b>{res?.primary ?? "—"}</b>. Nếu một nhà cung cấp lỗi, hệ thống tự chuyển sang nhà cung cấp kế tiếp.</p>
         <ul className="mt-3 space-y-2">
-          <li className="flex items-center justify-between rounded-xl border border-border p-3 text-base"><span>Lovable AI (đang dùng cho toàn hệ thống)</span><Status ok={res?.lovableAi} /></li>
-          {AI_KEYS.map((k) => <li key={k.env} className="flex items-center justify-between rounded-xl border border-border p-3 text-base"><span>{k.label}</span><Status ok={res?.keys.find((x) => x.env === k.env)?.configured} /></li>)}
+          <li className="flex items-center justify-between rounded-xl border border-border p-3 text-base"><span>Lovable AI (dự phòng cuối)</span><Status ok={res?.lovableAi} /></li>
+          {AI_KEYS.map((k) => {
+            const st = res?.keys.find((x) => x.env === k.env);
+            return (
+              <li key={k.env} className="rounded-xl border border-border p-3 text-base">
+                <div className="flex items-center justify-between gap-2"><span className="font-medium">{k.label}</span><Status ok={st ? st.active : undefined} configured={st?.configured} /></div>
+                <div className="mt-2 flex gap-2">
+                  <input type={show[k.env] ? "text" : "password"} autoComplete="off" value={vals[k.env] ?? ""} onChange={(e) => setVals((v) => ({ ...v, [k.env]: e.target.value }))}
+                    placeholder={st?.configured ? "•••••••• (đã lưu — dán để thay)" : "Dán khóa API"} className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-base" />
+                  <button type="button" onClick={() => setShow((s) => ({ ...s, [k.env]: !s[k.env] }))} className="rounded-lg border border-border px-3" aria-label="Hiện/Ẩn">{show[k.env] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  <button type="button" onClick={() => testOne(k.env)} disabled={one === k.env} className="rounded-lg border border-primary px-3 text-sm font-semibold text-primary">{one === k.env ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kiểm tra"}</button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
-        <button onClick={run} disabled={busy} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-lg font-bold text-primary-foreground">{busy && <Loader2 className="h-5 w-5 animate-spin" />}[Kiểm tra Kết nối]</button>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <button onClick={saveAll} disabled={busy || !Object.values(vals).some((v) => v.trim())} className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-lg font-bold text-primary-foreground disabled:opacity-50">Lưu tất cả API Key</button>
+          <button onClick={run} disabled={busy} className="flex items-center justify-center gap-2 rounded-xl border border-primary py-3 text-lg font-bold text-primary">{busy && <Loader2 className="h-5 w-5 animate-spin" />}Kiểm tra kết nối</button>
+        </div>
       </div>
       <div className={box}>
         <h2 className="flex items-center gap-2 text-xl font-semibold"><HardDrive className="h-5 w-5 text-primary" />Ổ đĩa Google Drive</h2>
