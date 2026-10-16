@@ -14,6 +14,7 @@ import { Route as ChienLuocRouteImport } from './routes/chien-luoc'
 import { Route as PhapLyRouteImport } from './routes/phap-ly'
 import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
+import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const TriThucRoute = TriThucRouteImport.update({
   path: '/tri-thuc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiArenaRoute = ApiArenaRouteImport.update({
+  id: '/api/arena',
+  path: '/api/arena',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
+  '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
+  '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,28 @@ export interface FileRoutesById {
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
+  '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/chien-luoc' | '/phap-ly' | '/quan-tri' | '/tri-thuc' | '/api/chat'
+    | '/'
+    | '/chien-luoc'
+    | '/phap-ly'
+    | '/quan-tri'
+    | '/tri-thuc'
+    | '/api/arena'
+    | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chien-luoc' | '/phap-ly' | '/quan-tri' | '/tri-thuc' | '/api/chat'
+  to:
+    | '/'
+    | '/chien-luoc'
+    | '/phap-ly'
+    | '/quan-tri'
+    | '/tri-thuc'
+    | '/api/arena'
+    | '/api/chat'
   id:
     | '__root__'
     | '/'
@@ -85,6 +107,7 @@ export interface FileRouteTypes {
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
+    | '/api/arena'
     | '/api/chat'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +117,7 @@ export interface RootRouteChildren {
   PhapLyRoute: typeof PhapLyRoute
   QuanTriRoute: typeof QuanTriRoute
   TriThucRoute: typeof TriThucRoute
+  ApiArenaRoute: typeof ApiArenaRoute
   ApiChatRoute: typeof ApiChatRoute
 }
 
@@ -134,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TriThucRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/arena': {
+      id: '/api/arena'
+      path: '/api/arena'
+      fullPath: '/api/arena'
+      preLoaderRoute: typeof ApiArenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -150,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   PhapLyRoute: PhapLyRoute,
   QuanTriRoute: QuanTriRoute,
   TriThucRoute: TriThucRoute,
+  ApiArenaRoute: ApiArenaRoute,
   ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
