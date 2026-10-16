@@ -63,8 +63,7 @@ function WarRoom() {
       if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error ?? "Lỗi kết nối AI");
       const reader = res.body.getReader(); const dec = new TextDecoder(); let acc = "";
       for (;;) { const { done, value } = await reader.read(); if (done) break; acc += dec.decode(value, { stream: true }); }
-      const json = acc.slice(acc.indexOf("{"), acc.lastIndexOf("}") + 1);
-      const parsed = JSON.parse(json) as Result;
+      const parsed = JSON.parse(cleanJson(acc)) as Result;
       // Reveal rounds one after another for the visual effect.
       setResult(parsed); setPhase(1);
       await new Promise((r) => setTimeout(r, 900)); setPhase(2);

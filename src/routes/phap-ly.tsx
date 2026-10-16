@@ -59,7 +59,7 @@ function LegalEngine() {
       if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error ?? "Lỗi kết nối AI");
       const reader = res.body.getReader(); const dec = new TextDecoder(); let acc = "";
       for (;;) { const { done, value } = await reader.read(); if (done) break; acc += dec.decode(value, { stream: true }); }
-      const r = JSON.parse(acc.slice(acc.indexOf("{"), acc.lastIndexOf("}") + 1)) as Result;
+      const r = JSON.parse(cleanJson(acc)) as Result;
       const order = { red: 0, yellow: 1, green: 2 };
       r.risks = (r.risks ?? []).sort((a, b) => order[a.level] - order[b.level]);
       setResult(r);
