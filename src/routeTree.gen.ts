@@ -16,6 +16,8 @@ import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
 import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge-search'
+import { Route as ApiLegalRouteImport } from './routes/api/legal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +54,16 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiKnowledgeSearchRoute = ApiKnowledgeSearchRouteImport.update({
+  id: '/api/knowledge-search',
+  path: '/api/knowledge-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLegalRoute = ApiLegalRouteImport.update({
+  id: '/api/legal',
+  path: '/api/legal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
+  '/api/legal': typeof ApiLegalRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
+  '/api/legal': typeof ApiLegalRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
+  '/api/legal': typeof ApiLegalRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/knowledge-search'
+    | '/api/legal'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/knowledge-search'
+    | '/api/legal'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/knowledge-search'
+    | '/api/legal'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   TriThucRoute: typeof TriThucRoute
   ApiArenaRoute: typeof ApiArenaRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiKnowledgeSearchRoute: typeof ApiKnowledgeSearchRoute
+  ApiLegalRoute: typeof ApiLegalRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/knowledge-search': {
+      id: '/api/knowledge-search'
+      path: '/api/knowledge-search'
+      fullPath: '/api/knowledge-search'
+      preLoaderRoute: typeof ApiKnowledgeSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/legal': {
+      id: '/api/legal'
+      path: '/api/legal'
+      fullPath: '/api/legal'
+      preLoaderRoute: typeof ApiLegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   TriThucRoute: TriThucRoute,
   ApiArenaRoute: ApiArenaRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiKnowledgeSearchRoute: ApiKnowledgeSearchRoute,
+  ApiLegalRoute: ApiLegalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
