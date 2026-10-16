@@ -43,7 +43,7 @@ const suggestions = [
 ];
 
 function Dashboard() {
-  const [selected, setSelected] = useState(companies[0].name);
+  const [selected, setSelected] = useState(companies[0]?.name ?? "");
   const [question, setQuestion] = useState("");
   const totalLate = companies.reduce((s, c) => s + c.late, 0);
 
