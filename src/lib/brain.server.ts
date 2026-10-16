@@ -31,7 +31,7 @@ export function brainProviderName(): string {
   return pickProvider(false)?.name ?? "Chưa có";
 }
 
-export async function brainStream(opts: { system: string; messages: Msg[]; signal: AbortSignal; json?: boolean; rules?: boolean }): Promise<Response> {
+export async function brainStream(opts: { system: string; messages: Msg[]; signal: AbortSignal; json?: boolean | undefined; rules?: boolean | undefined }): Promise<Response> {
   const needsVision = opts.messages.some((m) => Array.isArray(m.content));
   const p = pickProvider(needsVision);
   if (!p) return Response.json({ error: "Chưa cấu hình khóa AI." }, { status: 500 });
