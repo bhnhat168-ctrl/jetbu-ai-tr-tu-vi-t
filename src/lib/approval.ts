@@ -1,6 +1,6 @@
 /** Standard approved file name: [Ngày]_[PhòngBan]_Approved.pdf */
 export function approvedFileName(date: Date, department: string): string {
-  const d = date.toISOString().slice(0, 10);
+  const d = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(date); // Vietnam calendar day
   const dept = department
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D")
     .replace(/[^A-Za-z0-9]+/g, "") || "PhongBan";
