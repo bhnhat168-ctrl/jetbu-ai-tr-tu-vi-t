@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Atom, Flower2, Church, YinYang, Search, Loader2, Save, ExternalLink, Check } from "lucide-react";
+import { Atom, Flower2, Church, Orbit, Search, Loader2, Save, ExternalLink, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/lib/workspace-store";
 import { checkRateLimit, SEARCH_LIMIT } from "@/lib/rate-limit";
@@ -22,7 +22,7 @@ const CHANNELS = [
   { icon: Atom, title: "Khoa học & Giải Nobel", links: [["arXiv", "https://arxiv.org"], ["OpenAlex", "https://openalex.org"], ["Wikidata", "https://www.wikidata.org"], ["Nobel Prize API", "https://www.nobelprize.org/about/developer-zone-2/"], ["AlphaFold", "https://alphafold.ebi.ac.uk"], ["Bằng sáng chế Nikola Tesla", "https://patents.google.com/?inventor=Nikola+Tesla"]] },
   { icon: Flower2, title: "Phật giáo", links: [["SuttaCentral — Tam Tạng Pāli", "https://suttacentral.net"], ["CBETA — Đại Tạng Kinh", "https://cbetaonline.dila.edu.tw"]] },
   { icon: Church, title: "Thiên Chúa giáo & Do Thái giáo", links: [["DigiVatLib (IIIF) — Thư viện Vatican", "https://digi.vatlib.it"], ["Sefaria API", "https://www.sefaria.org"]] },
-  { icon: YinYang, title: "Đạo giáo & Dịch học", links: [["CText", "https://ctext.org"], ["Kanripo — Đạo Tạng", "https://www.kanripo.org"]] },
+  { icon: Orbit, title: "Đạo giáo & Dịch học", links: [["CText", "https://ctext.org"], ["Kanripo — Đạo Tạng", "https://www.kanripo.org"]] },
 ] as const;
 
 const SOURCES = [
@@ -57,7 +57,7 @@ function KnowledgeGate() {
   const run = async () => {
     if (!q.trim() || busy) return;
     const r = checkRateLimit(stamps.current, Date.now(), SEARCH_LIMIT.max, SEARCH_LIMIT.windowMs);
-    if (!r.allowed) return toast.error(`Bộ đếm chống nghẽn: chờ ${Math.ceil(r.retryInMs / 1000)} giây.`);
+    if (!r.allowed) { toast.error(`Bộ đếm chống nghẽn: chờ ${Math.ceil(r.retryInMs / 1000)} giây.`); return; }
     stamps.current = r.recent; setRemaining(r.remaining);
     setBusy(true); setHits([]);
     try {
@@ -71,12 +71,12 @@ function KnowledgeGate() {
   };
 
   const save = async (h: Hit) => {
-    if (!company) return toast.error("Hãy chọn công ty trước.");
+    if (!company) { toast.error("Hãy chọn công ty trước."); return; }
     const domain = SOURCES.find((s) => s.id === source)!.domain;
     const { error } = await supabase.from("knowledge_vectors").insert({
       company_code: company.code, domain, title: h.title.slice(0, 500), content: h.content.slice(0, 20000) || h.title, source_citation: `${h.citation} — ${h.url}`,
     });
-    if (error) return toast.error(`Không lưu được: ${error.message}`);
+    if (error) { toast.error(`Không lưu được: ${error.message}`); return; }
     setSaved((s) => new Set(s).add(h.url + h.title));
     qc.invalidateQueries({ queryKey: ["knowledge_vectors"] });
     toast.success(`Đã lưu vào Kho Tri Thức của ${company.code}`);

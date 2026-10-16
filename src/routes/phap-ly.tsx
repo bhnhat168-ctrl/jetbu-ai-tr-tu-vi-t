@@ -45,7 +45,7 @@ function LegalEngine() {
       toast.error("Hiện chỉ đọc được file văn bản (.txt, .md). Với Word/PDF, hãy sao chép nội dung và dán vào khung.");
       return;
     }
-    if (f.size > 500_000) return toast.error("File quá lớn (tối đa 500KB).");
+    if (f.size > 500_000) { toast.error("File quá lớn (tối đa 500KB)."); return; }
     setText(await f.text());
     toast.success(`Đã nạp ${f.name}`);
   };
