@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="font-display text-xl font-bold text-primary">JETBU AI</p>
           <p className="text-xs text-muted-foreground">Siêu trí tuệ quản trị & cố vấn chiến lược</p>
         </div>
-        <label className="block rounded-xl bg-card p-3 shadow-sm">
+        <label className="block rounded-xl bg-card p-3 text-card-foreground shadow-sm">
           <span className="mb-1 flex items-center gap-2 text-sm font-semibold"><Building2 className="h-4 w-4 text-primary" />Chuyển đổi Công ty</span>
           <select
             className="w-full rounded-lg border border-input bg-card px-3 py-2 text-base"
