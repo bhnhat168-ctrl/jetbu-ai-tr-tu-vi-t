@@ -1,181 +1,203 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  Building2, LayoutDashboard, Wallet, Users, FileText, ScrollText, Settings,
-  Sparkles, TrendingUp, AlertTriangle, Send, Banknote, Landmark, Bot,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Send, Columns2, Loader2, Plus, Trash2, FileDown, Square } from "lucide-react";
+import { toast } from "sonner";
+import { useWorkspace, type ChatMessage } from "@/lib/workspace-store";
+import { MODEL_CHOICES, findModel } from "@/lib/ai-models";
+import { DEPARTMENT_PROMPTS } from "@/lib/prompts";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "JETBU AI — Bảng điều khiển quản trị đa công ty" },
-      { name: "description", content: "Theo dõi doanh thu, quỹ tiền mặt, chuyển khoản và nhận cố vấn chiến lược từ JETBU AI." },
-      { property: "og:title", content: "JETBU AI — Quản trị đa công ty" },
-      { property: "og:description", content: "Hệ thống quản trị đa công ty và cố vấn chiến lược bằng AI." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: Dashboard,
+  head: () => ({ meta: [
+    { title: "Không gian AI Đa năng — JETBU AI" },
+    { name: "description", content: "Chat AI đa mô hình, soạn thảo song song và thư viện 18 mẫu câu lệnh theo phòng ban." },
+    { property: "og:title", content: "Không gian AI Đa năng — JETBU AI" },
+    { property: "og:description", content: "Chat AI đa mô hình, soạn thảo song song và thư viện 18 mẫu câu lệnh theo phòng ban." },
+  ] }),
+  component: Workspace,
 });
 
-const companies = [
-  { name: "JETBU Logistics", revenue: 4.82, growth: 12.4, late: 2 },
-  { name: "JETBU Vận Tải", revenue: 3.15, growth: 6.1, late: 5 },
-  { name: "JETBU Xây Dựng", revenue: 2.07, growth: -3.2, late: 0 },
-  { name: "JETBU Thương Mại", revenue: 1.64, growth: 9.8, late: 1 },
-];
+function Workspace() {
+  const ws = useWorkspace();
+  const { messages, setMessages, draftInput, setDraftInput, canvasText, setCanvasText, company, sessionKey } = ws;
+  const [modelKey, setModelKey] = useState("auto");
+  const [split, setSplit] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-const nav = [
-  { icon: LayoutDashboard, label: "Tổng quan", active: true },
-  { icon: Building2, label: "Công ty" },
-  { icon: Wallet, label: "Tài chính" },
-  { icon: Users, label: "Nhân sự" },
-  { icon: FileText, label: "Hợp đồng" },
-  { icon: ScrollText, label: "Nhật ký hệ thống" },
-  { icon: Settings, label: "Cài đặt" },
-];
+  // Abort any in-flight answer when the company changes.
+  useEffect(() => {
+    abortRef.current?.abort();
+    setBusy(false);
+  }, [sessionKey]);
 
-const suggestions = [
-  "Phân tích dòng tiền quý này",
-  "Công ty nào cần tái cơ cấu?",
-  "Đề xuất giảm chi phí vận hành",
-];
+  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => inputRef.current?.focus(), [busy, split]);
 
-function Dashboard() {
-  const [selected, setSelected] = useState(companies[0]?.name ?? "");
-  const [question, setQuestion] = useState("");
-  const totalLate = companies.reduce((s, c) => s + c.late, 0);
+  const send = async () => {
+    const text = draftInput.trim();
+    if (!text || busy) return;
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text };
+    const asstId = crypto.randomUUID();
+    const history = [...messages, userMsg];
+    setMessages(() => [...history, { id: asstId, role: "assistant", content: "" }]);
+    setDraftInput("");
+    setBusy(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    const mySession = sessionKey;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelKey, companyName: company?.name, canvas: split, messages: history.map(({ role, content }) => ({ role, content })) }),
+      });
+      if (!res.ok || !res.body) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Không thể kết nối AI.");
+      }
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let acc = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += dec.decode(value, { stream: true });
+        setMessages((m) => m.map((x) => (x.id === asstId ? { ...x, content: acc } : x)));
+      }
+      if (!acc) setMessages((m) => m.map((x) => (x.id === asstId ? { ...x, content: "_(Không có phản hồi)_" } : x)));
+    } catch (e) {
+      if (ctrl.signal.aborted) return;
+      const msg = e instanceof Error ? e.message : "Lỗi không xác định";
+      toast.error(msg);
+      setMessages((m) => m.map((x) => (x.id === asstId ? { ...x, content: `⚠️ ${msg}` } : x)));
+    } finally {
+      if (mySession === sessionKey) setBusy(false);
+    }
+  };
 
-  return (
-    <div className="flex min-h-screen">
-      <aside className="hidden w-72 shrink-0 flex-col bg-sidebar p-6 text-sidebar-foreground lg:flex">
-        <div className="mb-10 flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-primary text-primary-foreground">
-            <Sparkles className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-display text-xl font-bold">JETBU AI</p>
-            <p className="text-sm opacity-70">Quản trị đa công ty</p>
-          </div>
-        </div>
-        <nav className="space-y-1">
-          {nav.map((n) => (
-            <button
-              key={n.label}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-lg transition ${
-                n.active ? "bg-primary text-primary-foreground" : "opacity-80 hover:bg-primary/20"
-              }`}
-            >
-              <n.icon className="h-5 w-5" /> {n.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
+  const toCanvas = (t: string) => {
+    setSplit(true);
+    setCanvasText(canvasText ? `${canvasText}\n\n${t}` : t);
+    toast.success("Đã đưa nội dung sang trang soạn thảo");
+  };
 
-      <main className="flex-1 space-y-6 p-4 md:p-8">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-muted-foreground">Xin chào, Quản trị viên</p>
-            <h1 className="text-3xl font-bold md:text-4xl">Tổng quan tập đoàn</h1>
-          </div>
-          <select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-            className="rounded-xl border bg-card px-4 py-3 text-lg shadow-card"
-          >
-            {companies.map((c) => <option key={c.name}>{c.name}</option>)}
-          </select>
-        </header>
-
-        {totalLate > 0 && (
-          <div className="flex items-center gap-3 rounded-2xl bg-destructive p-5 text-destructive-foreground">
-            <AlertTriangle className="h-7 w-7 shrink-0" />
-            <p className="text-lg font-semibold">SOS: {totalLate} khoản thanh toán quá hạn trên toàn hệ thống</p>
+  const chat = (
+    <section className="flex min-h-[70vh] flex-1 flex-col rounded-2xl bg-card shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+        <select value={modelKey} onChange={(e) => setModelKey(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-base">
+          {MODEL_CHOICES.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+        </select>
+        <button onClick={() => setSplit((s) => !s)} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium ${split ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+          <Columns2 className="h-5 w-5" /> Soạn thảo Song song
+        </button>
+      </div>
+      <p className="px-4 pt-2 text-xs text-muted-foreground">Đang chạy: {findModel(modelKey).note}</p>
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {!messages.length && (
+          <div className="py-12 text-center text-muted-foreground">
+            <p className="font-display text-2xl font-semibold text-foreground">Xin chào, tôi là JETBU AI</p>
+            <p className="mt-2 text-base">Đang làm việc cho: <b>{company?.name ?? "..."}</b>. Chọn một mẫu câu lệnh bên phải hoặc gõ câu hỏi.</p>
           </div>
         )}
-
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat icon={TrendingUp} label="Tổng doanh thu" value="11,68 tỷ ₫" note="+7,8% so với tháng trước" />
-          <Stat icon={Banknote} label="Quỹ tiền mặt" value="2,34 tỷ ₫" note="Cập nhật hôm nay" />
-          <Stat icon={Landmark} label="Quỹ chuyển khoản" value="8,91 tỷ ₫" note="4 tài khoản ngân hàng" />
-          <Stat icon={Building2} label="Công ty thành viên" value="4" note="Đang hoạt động" />
-        </section>
-
-        <div className="grid gap-6 xl:grid-cols-3">
-          <section className="rounded-2xl bg-card p-6 shadow-card xl:col-span-2">
-            <h2 className="mb-5 text-2xl font-semibold">Hiệu suất công ty</h2>
-            <div className="space-y-4">
-              {companies.map((c) => (
-                <div key={c.name} className="rounded-xl border p-4">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-lg font-semibold">{c.name}</p>
-                    <div className="flex items-center gap-3">
-                      <span className="font-display text-lg font-bold">{c.revenue.toFixed(2).replace(".", ",")} tỷ ₫</span>
-                      <span className={`rounded-full px-3 py-1 text-sm font-semibold ${c.growth >= 0 ? "bg-secondary text-secondary-foreground" : "bg-destructive/10 text-destructive"}`}>
-                        {c.growth > 0 ? "+" : ""}{c.growth}%
-                      </span>
-                      {c.late > 0 && (
-                        <span className="rounded-full bg-destructive px-3 py-1 text-sm font-semibold text-destructive-foreground">{c.late} quá hạn</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${(c.revenue / 5) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="flex flex-col rounded-2xl bg-gradient-hero p-6 text-primary-foreground shadow-card">
-            <div className="mb-4 flex items-center gap-3">
-              <Bot className="h-8 w-8" />
-              <div>
-                <h2 className="text-2xl font-semibold">Cố vấn JETBU AI</h2>
-                <p className="text-sm opacity-75">Đang phân tích: {selected}</p>
+        {messages.map((m) => (
+          <div key={m.id} className={m.role === "user" ? "flex justify-end" : ""}>
+            {m.role === "user" ? (
+              <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-primary px-4 py-3 text-base text-primary-foreground">{m.content}</div>
+            ) : (
+              <div className="max-w-none">
+                {m.content ? (
+                  <div className="prose prose-sm max-w-none text-base text-foreground [&_*]:text-foreground"><ReactMarkdown>{m.content}</ReactMarkdown></div>
+                ) : (
+                  <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />JETBU AI đang suy nghĩ...</span>
+                )}
+                {split && m.content && !busy && (
+                  <button onClick={() => toCanvas(m.content)} className="mt-2 flex items-center gap-1 text-sm font-medium text-primary"><FileDown className="h-4 w-4" />Đưa sang trang soạn thảo</button>
+                )}
               </div>
+            )}
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+      <div className="flex gap-2 border-t border-border p-3">
+        <textarea
+          ref={inputRef}
+          value={draftInput}
+          onChange={(e) => setDraftInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          rows={2}
+          placeholder="Nhập câu hỏi hoặc yêu cầu soạn thảo..."
+          className="flex-1 resize-none rounded-xl border border-input bg-card px-3 py-2 text-base outline-none focus:ring-2 focus:ring-ring"
+        />
+        {busy ? (
+          <button onClick={() => { abortRef.current?.abort(); setBusy(false); }} className="flex items-center gap-2 rounded-xl bg-destructive px-4 text-lg font-semibold text-destructive-foreground"><Square className="h-5 w-5" />Dừng</button>
+        ) : (
+          <button onClick={send} disabled={!draftInput.trim()} className="flex items-center gap-2 rounded-xl bg-primary px-4 text-lg font-semibold text-primary-foreground disabled:opacity-50"><Send className="h-5 w-5" />Gửi</button>
+        )}
+      </div>
+    </section>
+  );
+
+  return (
+    <div className="flex flex-col gap-4 p-4 xl:flex-row">
+      <div className={`flex min-w-0 flex-1 flex-col gap-4 ${split ? "lg:flex-row" : ""}`}>
+        {chat}
+        {split && (
+          <section className="flex min-h-[70vh] flex-1 flex-col rounded-2xl bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b border-border p-3">
+              <h2 className="font-display text-lg font-semibold">Trang soạn thảo hợp đồng / báo cáo</h2>
+              <button onClick={() => setCanvasText("")} className="text-sm text-muted-foreground hover:text-destructive">Xóa trang</button>
             </div>
-            <div className="mb-4 rounded-xl bg-card p-4 text-card-foreground">
-              <p className="leading-relaxed">
-                💡 Doanh thu {selected} tăng ổn định. Đề xuất ưu tiên thu hồi công nợ quá hạn và
-                cân đối tỷ lệ quỹ tiền mặt dưới 20% tổng thanh khoản.
-              </p>
-            </div>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {suggestions.map((s) => (
-                <button key={s} onClick={() => setQuestion(s)} className="rounded-full border border-primary-foreground/30 px-3 py-1.5 text-sm hover:bg-primary-foreground/10">
-                  {s}
-                </button>
-              ))}
-            </div>
-            <div className="mt-auto flex gap-2 rounded-xl bg-card p-2">
-              <input
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Hỏi cố vấn chiến lược..."
-                className="flex-1 bg-transparent px-3 text-lg text-card-foreground outline-none"
-              />
-              <button className="grid h-12 w-12 place-items-center rounded-lg bg-gradient-primary text-primary-foreground">
-                <Send className="h-5 w-5" />
-              </button>
-            </div>
+            <textarea
+              value={canvasText}
+              onChange={(e) => setCanvasText(e.target.value)}
+              placeholder="Soạn thảo trực tiếp tại đây, hoặc đưa câu trả lời của AI sang..."
+              className="flex-1 resize-none bg-card p-6 font-serif text-base leading-relaxed outline-none"
+            />
           </section>
-        </div>
-      </main>
+        )}
+      </div>
+      <RightPanel onPick={(p) => { setDraftInput(p); inputRef.current?.focus(); }} />
     </div>
   );
 }
 
-function Stat({ icon: Icon, label, value, note }: { icon: typeof TrendingUp; label: string; value: string; note: string }) {
+function RightPanel({ onPick }: { onPick: (p: string) => void }) {
+  const { tasks, setTasks } = useWorkspace();
+  const [newTask, setNewTask] = useState("");
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-muted-foreground">{label}</p>
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary text-primary"><Icon className="h-5 w-5" /></div>
+    <aside className="flex w-full shrink-0 flex-col gap-4 xl:w-80">
+      <div className="rounded-2xl bg-card p-4 shadow-sm">
+        <h2 className="font-display text-lg font-semibold">Công việc trong ngày</h2>
+        <ul className="mt-3 space-y-2">
+          {tasks.map((t) => (
+            <li key={t.id} className="flex items-center gap-2 text-base">
+              <input type="checkbox" checked={t.done} onChange={() => setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)))} className="h-5 w-5 accent-primary" />
+              <span className={`flex-1 ${t.done ? "text-muted-foreground line-through" : ""}`}>{t.text}</span>
+              <button aria-label="Xóa" onClick={() => setTasks((ts) => ts.filter((x) => x.id !== t.id))}><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
+            </li>
+          ))}
+        </ul>
+        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (!newTask.trim()) return; setTasks((ts) => [...ts, { id: crypto.randomUUID(), text: newTask.trim(), done: false }]); setNewTask(""); }}>
+          <input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Thêm việc..." className="min-w-0 flex-1 rounded-lg border border-input px-3 py-2 text-base" />
+          <button className="rounded-lg bg-primary px-3 text-primary-foreground" aria-label="Thêm"><Plus className="h-5 w-5" /></button>
+        </form>
       </div>
-      <p className="font-display text-3xl font-bold">{value}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{note}</p>
-    </div>
+      <div className="rounded-2xl bg-card p-4 shadow-sm">
+        <h2 className="font-display text-lg font-semibold">Thư viện 18 mẫu câu lệnh</h2>
+        <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+          {DEPARTMENT_PROMPTS.map((p) => (
+            <button key={p.dept} onClick={() => onPick(p.prompt)} className="w-full rounded-xl border border-border p-3 text-left transition-colors hover:border-primary hover:bg-secondary">
+              <p className="text-base font-semibold text-primary">{p.dept}</p>
+              <p className="line-clamp-2 text-sm text-muted-foreground">{p.prompt}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </aside>
   );
 }
