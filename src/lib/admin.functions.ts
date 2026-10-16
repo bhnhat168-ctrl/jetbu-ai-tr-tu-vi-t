@@ -8,27 +8,15 @@ export const summarizeReport = createServerFn({ method: "POST" })
   .inputValidator(idInput)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { brainComplete } = await import("./brain.server");
     const { data: r, error } = await supabaseAdmin.from("approval_reports").select("*").eq("id", data.id).single();
     if (error || !r) throw new Error("Không tìm thấy báo cáo");
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) throw new Error("Chưa cấu hình khóa AI");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        reasoning_effort: "low",
-        messages: [
-          { role: "system", content: "Bạn là thư ký điều hành. Tóm tắt báo cáo bằng tiếng Việt: 3-5 gạch đầu dòng ý chính, 1 dòng rủi ro, 1 dòng đề xuất." },
-          { role: "user", content: `Tiêu đề: ${r.title}\nPhòng ban: ${r.department}\n\n${(r.draft_content ?? "").slice(0, 30000)}` },
-        ],
-      }),
+    const summary = await brainComplete({
+      rules: false,
+      system: "Bạn là thư ký điều hành. Tóm tắt báo cáo bằng tiếng Việt: 3-5 gạch đầu dòng ý chính, 1 dòng rủi ro, 1 dòng đề xuất.",
+      user: `Tiêu đề: ${r.title}\nPhòng ban: ${r.department}\n\n${(r.draft_content ?? "").slice(0, 30000)}`,
     });
-    if (res.status === 429) throw new Error("AI đang quá tải, thử lại sau.");
-    if (res.status === 402) throw new Error("Đã hết tín dụng AI.");
-    if (!res.ok) throw new Error("Không tạo được tóm tắt.");
-    const j = await res.json();
-    const summary: string = j.choices?.[0]?.message?.content ?? "";
+    if (!summary) throw new Error("Không tạo được tóm tắt.");
     const { error: upErr } = await supabaseAdmin.from("approval_reports").update({ ai_summary: summary }).eq("id", data.id).eq("status", "pending");
     if (upErr) throw new Error(upErr.message);
     return { summary };
@@ -60,13 +48,42 @@ export const approveReport = createServerFn({ method: "POST" })
     return { approvedPath, signature };
   });
 
-export const checkConnections = createServerFn({ method: "POST" }).handler(async () => {
-  const keys = AI_KEYS.map((k) => ({ env: k.env, configured: Boolean(process.env[k.env]) }));
-  let lovableAi = false;
-  const key = process.env["LOVABLE_API_KEY"];
-  if (key) {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/models", { headers: { Authorization: `Bearer ${key}` } }).catch(() => null);
-    lovableAi = Boolean(r?.ok);
-  }
-  return { keys, lovableAi, checkedAt: new Date().toISOString() };
-});
+const envNames = AI_KEYS.map((k) => k.env) as [string, ...string[]];
+
+/** Write-only: overrides keys in server memory. Values are never sent back to the browser. */
+export const saveApiKeys = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.record(z.enum(envNames), z.string().max(500)).parse(d))
+  .handler(async ({ data }) => {
+    const { setRuntimeKeys } = await import("./brain.server");
+    setRuntimeKeys(data as Record<string, string>);
+    return { saved: Object.values(data).filter((v) => v.trim()).length };
+  });
+
+async function probe(env: string, key: string): Promise<boolean> {
+  const H = { Authorization: `Bearer ${key}` };
+  const url =
+    env === "GROQ_API_KEY" ? "https://api.groq.com/openai/v1/models" :
+    env === "OPENROUTER_API_KEY" ? "https://openrouter.ai/api/v1/key" :
+    env.startsWith("GEMINI") ? "https://generativelanguage.googleapis.com/v1beta/openai/models" :
+    "https://api.anthropic.com/v1/models";
+  const headers = env === "ANTHROPIC_API_KEY" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : H;
+  const r = await fetch(url, { headers }).catch(() => null);
+  return Boolean(r?.ok);
+}
+
+export const checkConnections = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ only: z.string().optional() }).optional().parse(d))
+  .handler(async ({ data }) => {
+    const { getKey, brainProviderName } = await import("./brain.server");
+    const keys = await Promise.all(AI_KEYS.filter((k) => !data?.only || k.env === data.only).map(async (k) => {
+      const v = getKey(k.env);
+      return { env: k.env, configured: Boolean(v), active: v ? await probe(k.env, v) : false };
+    }));
+    let lovableAi = false;
+    const lk = process.env["LOVABLE_API_KEY"];
+    if (lk && !data?.only) {
+      const r = await fetch("https://ai.gateway.lovable.dev/v1/models", { headers: { Authorization: `Bearer ${lk}` } }).catch(() => null);
+      lovableAi = Boolean(r?.ok);
+    }
+    return { keys, lovableAi, primary: brainProviderName(), checkedAt: new Date().toISOString() };
+  });
