@@ -4,14 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, CheckCircle2, Loader2, Upload, FileSignature, KeyRound, HardDrive, Eye, MapPin, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Upload, FileSignature, KeyRound, HardDrive, Eye, EyeOff, MapPin, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/lib/workspace-store";
 import { DEPARTMENT_PROMPTS } from "@/lib/prompts";
 import { AI_KEYS } from "@/lib/approval";
-import { approveReport, checkConnections, summarizeReport } from "@/lib/admin.functions";
+import { approveReport, checkConnections, saveApiKeys, summarizeReport } from "@/lib/admin.functions";
 
 
 export const Route = createFileRoute("/quan-tri")({
@@ -304,9 +304,10 @@ function KeysTab() {
     </div>
   );
 }
-function Status({ ok }: { ok: boolean | undefined }) {
+function Status({ ok, configured }: { ok: boolean | undefined; configured?: boolean | undefined }) {
   if (ok === undefined) return <span className="text-sm text-muted-foreground">Chưa kiểm tra</span>;
-  return ok ? <span className="font-semibold text-primary">✓ Đã kết nối</span> : <span className="font-semibold text-destructive">✗ Chưa có khóa</span>;
+  if (ok) return <span className="font-semibold text-primary">✓ Đang hoạt động</span>;
+  return <span className="font-semibold text-destructive">{configured === true ? "✗ Khóa lỗi" : "✗ Chưa cấu hình"}</span>;
 }
 
 /* ---------- Tab 6 ---------- */
