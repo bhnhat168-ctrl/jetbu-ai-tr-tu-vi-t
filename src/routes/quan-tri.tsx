@@ -255,7 +255,7 @@ function KeysTab() {
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <div className={box}>
         <h2 className="flex items-center gap-2 text-xl font-semibold"><KeyRound className="h-5 w-5 text-primary" />Chìa khóa AI</h2>
-        <p className="mt-2 rounded-lg bg-secondary p-3 text-sm">🔒 Vì an toàn, chìa khóa API <b>không được dán vào trang web</b>. Hãy nhắn trợ lý Lovable "thêm khóa Gemini/Groq/..." — một ô nhập bảo mật sẽ hiện ra và khóa được mã hóa trên máy chủ.</p>
+        <p className="mt-2 rounded-lg bg-secondary p-3 text-sm">🔒 Bộ não JETBU AI ưu tiên khóa Gemini riêng, sau đó Groq; nếu chưa có khóa thì tự dùng AI tích hợp sẵn nên vẫn chạy ngay. Vì an toàn, khóa <b>không dán vào trang web</b> — nhắn trợ lý Lovable "thêm khóa Gemini" để mở ô nhập bảo mật.</p>
         <ul className="mt-3 space-y-2">
           <li className="flex items-center justify-between rounded-xl border border-border p-3 text-base"><span>Lovable AI (đang dùng cho toàn hệ thống)</span><Status ok={res?.lovableAi} /></li>
           {AI_KEYS.map((k) => <li key={k.env} className="flex items-center justify-between rounded-xl border border-border p-3 text-base"><span>{k.label}</span><Status ok={res?.keys.find((x) => x.env === k.env)?.configured} /></li>)}

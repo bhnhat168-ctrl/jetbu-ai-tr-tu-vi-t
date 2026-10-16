@@ -17,6 +17,7 @@ import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
 import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiJetbuAiBrainRouteImport } from './routes/api/jetbu-ai-brain'
 import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge-search'
 import { Route as ApiLegalRouteImport } from './routes/api/legal'
 import { Route as ApiOcrRouteImport } from './routes/api/ocr'
@@ -61,6 +62,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiJetbuAiBrainRoute = ApiJetbuAiBrainRouteImport.update({
+  id: '/api/jetbu-ai-brain',
+  path: '/api/jetbu-ai-brain',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiKnowledgeSearchRoute = ApiKnowledgeSearchRouteImport.update({
   id: '/api/knowledge-search',
   path: '/api/knowledge-search',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/jetbu-ai-brain'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/jetbu-ai-brain'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
+    | '/api/jetbu-ai-brain'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   TriThucRoute: typeof TriThucRoute
   ApiArenaRoute: typeof ApiArenaRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiJetbuAiBrainRoute: typeof ApiJetbuAiBrainRoute
   ApiKnowledgeSearchRoute: typeof ApiKnowledgeSearchRoute
   ApiLegalRoute: typeof ApiLegalRoute
   ApiOcrRoute: typeof ApiOcrRoute
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/jetbu-ai-brain': {
+      id: '/api/jetbu-ai-brain'
+      path: '/api/jetbu-ai-brain'
+      fullPath: '/api/jetbu-ai-brain'
+      preLoaderRoute: typeof ApiJetbuAiBrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/knowledge-search': {
       id: '/api/knowledge-search'
       path: '/api/knowledge-search'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   TriThucRoute: TriThucRoute,
   ApiArenaRoute: ApiArenaRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiJetbuAiBrainRoute: ApiJetbuAiBrainRoute,
   ApiKnowledgeSearchRoute: ApiKnowledgeSearchRoute,
   ApiLegalRoute: ApiLegalRoute,
   ApiOcrRoute: ApiOcrRoute,
