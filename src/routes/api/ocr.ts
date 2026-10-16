@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/ocr")({
       POST: async ({ request }) => {
         const { image, kind } = (await request.json()) as { image?: string; kind?: string };
         if (!image?.startsWith("data:image/") || image.length > 8_000_000) return Response.json({ error: "Ảnh không hợp lệ hoặc quá lớn." }, { status: 400 });
-        const desc = KIND[kind ?? ""] ?? KIND.invoice;
+        const desc = KIND[kind ?? ""] ?? KIND["invoice"];
         return streamGatewayText({
           json: true,
           signal: request.signal,
