@@ -18,6 +18,7 @@ import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge-search'
 import { Route as ApiLegalRouteImport } from './routes/api/legal'
+import { Route as ApiOcrRouteImport } from './routes/api/ocr'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const ApiLegalRoute = ApiLegalRouteImport.update({
   path: '/api/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOcrRoute = ApiOcrRouteImport.update({
+  id: '/api/ocr',
+  path: '/api/ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiKnowledgeSearchRoute: typeof ApiKnowledgeSearchRoute
   ApiLegalRoute: typeof ApiLegalRoute
+  ApiOcrRoute: typeof ApiOcrRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLegalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ocr': {
+      id: '/api/ocr'
+      path: '/api/ocr'
+      fullPath: '/api/ocr'
+      preLoaderRoute: typeof ApiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiKnowledgeSearchRoute: ApiKnowledgeSearchRoute,
   ApiLegalRoute: ApiLegalRoute,
+  ApiOcrRoute: ApiOcrRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
