@@ -26,7 +26,7 @@ export function getKey(env: string): string | undefined {
   return runtimeKeys[env] || process.env[env] || undefined;
 }
 
-type Provider = { name: string; url: string; key: string; model: string; headers: Record<string, string>; vision: boolean; jsonMode: boolean };
+type Provider = { name: string; url: string; key: string; model: string; headers: Record<string, string>; vision: boolean; jsonMode: boolean; anthropic?: boolean };
 
 const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -42,9 +42,10 @@ function buildChain(preferred: string | undefined, needsVision: boolean): Provid
     groq: groq ? { name: "Groq GPT-OSS 120B", url: GROQ_URL, key: groq, model: "openai/gpt-oss-120b", headers: {}, vision: false, jsonMode: true } : null,
     "gemini-pro": gemPro || gem ? { name: "Gemini Pro", url: GEM_URL, key: (gemPro || gem)!, model: "gemini-pro-latest", headers: {}, vision: true, jsonMode: true } : null,
     "gemini-flash": gem || gemPro ? { name: "Gemini Flash", url: GEM_URL, key: (gem || gemPro)!, model: "gemini-flash-latest", headers: {}, vision: true, jsonMode: true } : null,
+    claude: lov ? { name: "Claude Sonnet 5 (Lovable AI)", url: "https://ai.gateway.lovable.dev/v1/messages", key: lov, model: "anthropic/claude-sonnet-5", headers: { "X-Lovable-AIG-SDK": "fetch" }, vision: true, jsonMode: true, anthropic: true } : null,
     lovable: lov ? { name: "Lovable AI", url: "https://ai.gateway.lovable.dev/v1/chat/completions", key: lov, model: "google/gemini-3-flash-preview", headers: { "X-Lovable-AIG-SDK": "fetch" }, vision: true, jsonMode: true } : null,
   };
-  const order = [preferred && preferred !== "auto" ? preferred : "", preferred === "deepseek-r1" ? "deepseek-r1" : "deepseek-v3", "groq", "gemini-pro", "gemini-flash", "lovable"];
+  const order = [preferred && preferred !== "auto" ? preferred : "", preferred === "deepseek-r1" ? "deepseek-r1" : "deepseek-v3", "groq", "gemini-pro", "gemini-flash", "claude", "lovable"];
   const seen = new Set<string>();
   const chain: Provider[] = [];
   for (const k of order) {
@@ -72,12 +73,14 @@ async function openUpstream(opts: { system: string; messages: Msg[]; signal: Abo
         method: "POST",
         signal: opts.signal,
         headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.headers },
-        body: JSON.stringify({
-          model: p.model,
-          stream: true,
-          ...(opts.json && p.jsonMode ? { response_format: { type: "json_object" } } : {}),
-          messages: [{ role: "system", content: sys }, ...opts.messages],
-        }),
+        body: p.anthropic
+          ? JSON.stringify({ model: p.model, max_tokens: 16000, stream: true, system: sys, messages: opts.messages })
+          : JSON.stringify({
+              model: p.model,
+              stream: true,
+              ...(opts.json && p.jsonMode ? { response_format: { type: "json_object" } } : {}),
+              messages: [{ role: "system", content: sys }, ...opts.messages],
+            }),
       });
       if (up.ok && up.body) return { up, p };
       last = up.status;
@@ -106,7 +109,11 @@ function textStream(body: ReadableStream<Uint8Array>) {
         if (!t.startsWith("data:")) continue;
         const d = t.slice(5).trim();
         if (!d || d === "[DONE]") continue;
-        try { const c = JSON.parse(d).choices?.[0]?.delta?.content; if (c) ctrl.enqueue(enc.encode(c)); } catch { /* partial */ }
+        try {
+          const o = JSON.parse(d);
+          const c = o.choices?.[0]?.delta?.content ?? (o.type === "content_block_delta" && o.delta?.type === "text_delta" ? o.delta.text : undefined);
+          if (c) ctrl.enqueue(enc.encode(c));
+        } catch { /* partial */ }
       }
     },
   }));

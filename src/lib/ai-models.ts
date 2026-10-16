@@ -11,6 +11,7 @@ export const MODEL_CHOICES: ModelChoice[] = [
   { key: "deepseek-v3", label: "DeepSeek V4 Flash (OpenRouter)", note: "deepseek/deepseek-v4-flash", model: "deepseek/deepseek-v4-flash", persona: "Bạn là trợ lý quản trị đa năng." },
   { key: "deepseek-r1", label: "Toán định lượng & Suy luận sâu (DeepSeek V4 Pro)", note: "deepseek/deepseek-v4-pro", model: "deepseek/deepseek-v4-pro", persona: "Bạn là chuyên gia toán định lượng, tài chính. Trình bày từng bước tính toán rõ ràng." },
   { key: "groq", label: "Groq GPT-OSS 120B (Siêu tốc < 1s)", note: "openai/gpt-oss-120b", model: "openai/gpt-oss-120b", persona: "Bạn là trợ lý nhanh, súc tích." },
+  { key: "claude", label: "Claude Sonnet 5 (Anthropic)", note: "anthropic/claude-sonnet-5 · qua Lovable AI", model: "claude", persona: "Bạn là chuyên gia phân tích chiến lược sâu sắc, lập luận chặt chẽ." },
   { key: "gemini-pro", label: "Google Gemini Pro (mới nhất)", note: "gemini-pro-latest", model: "gemini-pro-latest", persona: "Bạn là chuyên gia phân tích chiến lược sâu sắc." },
   { key: "gemini-flash", label: "Google Gemini Flash (mới nhất)", note: "gemini-flash-latest", model: "gemini-flash-latest", persona: "Bạn là trợ lý nhanh, súc tích." },
 ];
