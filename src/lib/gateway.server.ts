@@ -1,5 +1,5 @@
 /** Streams plain text from Lovable AI (chat completions) for a JSON-producing prompt. */
-export async function streamGatewayText(opts: { system: string; user: string; signal: AbortSignal; json?: boolean; model?: string }): Promise<Response> {
+export async function streamGatewayText(opts: { system: string; user: string | unknown[]; signal: AbortSignal; json?: boolean; model?: string }): Promise<Response> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) return Response.json({ error: "Chưa cấu hình khóa AI." }, { status: 500 });
   const up = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
