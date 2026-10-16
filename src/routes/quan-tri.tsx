@@ -8,6 +8,7 @@ import { AlertTriangle, CheckCircle2, Loader2, Upload, FileSignature, KeyRound, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/lib/workspace-store";
 import { DEPARTMENT_PROMPTS } from "@/lib/prompts";
 import { AI_KEYS } from "@/lib/approval";
@@ -147,7 +148,7 @@ function ApprovalTab() {
     queryFn: async () => {
       const { data, error } = await supabase.from("approval_reports").select("*").eq("company_code", company!.code).order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data ?? []) as Tables<"approval_reports">[];
     },
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["approval_reports"] });
@@ -346,7 +347,7 @@ function GpsTab() {
     queryFn: async () => {
       const { data, error } = await supabase.from("gps_checkins").select("*").eq("company_code", company!.code).order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
-      return data;
+      return (data ?? []) as Tables<"gps_checkins">[];
     },
   });
   const cur = data.find((d) => d.id === sel) ?? data.find((d) => d.latitude != null);

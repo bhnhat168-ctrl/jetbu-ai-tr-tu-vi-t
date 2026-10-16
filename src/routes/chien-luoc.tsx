@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Gauge, Sun, AlertTriangle, ShieldAlert, Swords, Gavel, Loader2, Rocket, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useWorkspace } from "@/lib/workspace-store";
 import { EXPERTS, SCENARIOS, activeVetoes, confluenceScore } from "@/lib/war-room";
 
@@ -232,7 +233,7 @@ function CausalGraph() {
     queryFn: async () => {
       const { data, error } = await supabase.from("causal_graph_edges").select("id,source_entity,relation_type,target_entity,impact_weight,description");
       if (error) throw error;
-      return data;
+      return (data ?? []) as Pick<Tables<"causal_graph_edges">, "id" | "source_entity" | "relation_type" | "target_entity" | "impact_weight" | "description">[];
     },
   });
   // Two-column layout: causes on the left, effects on the right, so labels never overlap.
