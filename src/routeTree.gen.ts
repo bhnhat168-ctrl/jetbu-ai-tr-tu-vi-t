@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChienLuocRouteImport } from './routes/chien-luoc'
+import { Route as DiDongRouteImport } from './routes/di-dong'
 import { Route as PhapLyRouteImport } from './routes/phap-ly'
 import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
@@ -18,6 +19,7 @@ import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge-search'
 import { Route as ApiLegalRouteImport } from './routes/api/legal'
+import { Route as ApiOcrRouteImport } from './routes/api/ocr'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const ChienLuocRoute = ChienLuocRouteImport.update({
   id: '/chien-luoc',
   path: '/chien-luoc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiDongRoute = DiDongRouteImport.update({
+  id: '/di-dong',
+  path: '/di-dong',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PhapLyRoute = PhapLyRouteImport.update({
@@ -64,10 +71,16 @@ const ApiLegalRoute = ApiLegalRouteImport.update({
   path: '/api/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOcrRoute = ApiOcrRouteImport.update({
+  id: '/api/ocr',
+  path: '/api/ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -75,10 +88,12 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -86,11 +101,13 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -98,12 +115,14 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
+  '/api/ocr': typeof ApiOcrRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -111,10 +130,12 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -122,10 +143,12 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   id:
     | '__root__'
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -133,11 +156,13 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/knowledge-search'
     | '/api/legal'
+    | '/api/ocr'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChienLuocRoute: typeof ChienLuocRoute
+  DiDongRoute: typeof DiDongRoute
   PhapLyRoute: typeof PhapLyRoute
   QuanTriRoute: typeof QuanTriRoute
   TriThucRoute: typeof TriThucRoute
@@ -145,6 +170,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiKnowledgeSearchRoute: typeof ApiKnowledgeSearchRoute
   ApiLegalRoute: typeof ApiLegalRoute
+  ApiOcrRoute: typeof ApiOcrRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -161,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/chien-luoc'
       fullPath: '/chien-luoc'
       preLoaderRoute: typeof ChienLuocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/di-dong': {
+      id: '/di-dong'
+      path: '/di-dong'
+      fullPath: '/di-dong'
+      preLoaderRoute: typeof DiDongRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/phap-ly': {
@@ -212,12 +245,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLegalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ocr': {
+      id: '/api/ocr'
+      path: '/api/ocr'
+      fullPath: '/api/ocr'
+      preLoaderRoute: typeof ApiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChienLuocRoute: ChienLuocRoute,
+  DiDongRoute: DiDongRoute,
   PhapLyRoute: PhapLyRoute,
   QuanTriRoute: QuanTriRoute,
   TriThucRoute: TriThucRoute,
@@ -225,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiKnowledgeSearchRoute: ApiKnowledgeSearchRoute,
   ApiLegalRoute: ApiLegalRoute,
+  ApiOcrRoute: ApiOcrRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

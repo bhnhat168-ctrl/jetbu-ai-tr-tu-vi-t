@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Bot, Building2, Gauge, Scale, Library, ShieldCheck } from "lucide-react";
+import { Bot, Building2, Gauge, Scale, Library, ShieldCheck, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace, type Company } from "@/lib/workspace-store";
 
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/phap-ly", label: "Cố vấn Pháp lý & Hợp đồng", icon: Scale },
   { to: "/tri-thuc", label: "Kho Tri thức Nhân loại", icon: Library },
   { to: "/quan-tri", label: "Trung tâm Quản trị Admin & GPS", icon: ShieldCheck },
+  { to: "/di-dong", label: "Ứng dụng Di động Thực địa", icon: Smartphone },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
