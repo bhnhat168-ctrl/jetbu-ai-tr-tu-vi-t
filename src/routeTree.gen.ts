@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChienLuocRouteImport } from './routes/chien-luoc'
+import { Route as DiDongRouteImport } from './routes/di-dong'
 import { Route as PhapLyRouteImport } from './routes/phap-ly'
 import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
 const ChienLuocRoute = ChienLuocRouteImport.update({
   id: '/chien-luoc',
   path: '/chien-luoc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiDongRoute = DiDongRouteImport.update({
+  id: '/di-dong',
+  path: '/di-dong',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PhapLyRoute = PhapLyRouteImport.update({
@@ -74,6 +80,7 @@ const ApiOcrRoute = ApiOcrRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
+  '/di-dong': typeof DiDongRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chien-luoc'
+    | '/di-dong'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChienLuocRoute: typeof ChienLuocRoute
+  DiDongRoute: typeof DiDongRoute
   PhapLyRoute: typeof PhapLyRoute
   QuanTriRoute: typeof QuanTriRoute
   TriThucRoute: typeof TriThucRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/chien-luoc'
       fullPath: '/chien-luoc'
       preLoaderRoute: typeof ChienLuocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/di-dong': {
+      id: '/di-dong'
+      path: '/di-dong'
+      fullPath: '/di-dong'
+      preLoaderRoute: typeof DiDongRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/phap-ly': {
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChienLuocRoute: ChienLuocRoute,
+  DiDongRoute: DiDongRoute,
   PhapLyRoute: PhapLyRoute,
   QuanTriRoute: QuanTriRoute,
   TriThucRoute: TriThucRoute,
