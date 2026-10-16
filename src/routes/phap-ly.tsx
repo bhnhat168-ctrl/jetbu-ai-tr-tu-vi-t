@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { cleanJson } from "@/lib/approval";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Scale, Landmark, Gavel, Upload, Search, Loader2, Copy } from "lucide-react";
