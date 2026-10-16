@@ -16,4 +16,4 @@ export const MODEL_CHOICES: ModelChoice[] = [
   { key: "macro", label: "Tin vĩ mô (kiểu Grok-3)", note: "chạy trên Gemini 3 Flash", gatewayModel: "google/gemini-3-flash-preview", api: "chat", persona: "Bạn là chuyên gia phân tích kinh tế vĩ mô, thị trường và chính sách." },
 ];
 
-export const findModel = (key: string) => MODEL_CHOICES.find((m) => m.key === key) ?? MODEL_CHOICES[0];
+export const findModel = (key: string): ModelChoice => MODEL_CHOICES.find((m) => m.key === key) ?? MODEL_CHOICES[0]!;
