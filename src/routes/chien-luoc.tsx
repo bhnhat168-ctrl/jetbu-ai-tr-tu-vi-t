@@ -239,7 +239,7 @@ function CausalGraph() {
   const left = Array.from(new Set(data.map((e) => e.source_entity)));
   const right = Array.from(new Set(data.map((e) => e.target_entity)));
   const nodes = [...left, ...right];
-  const W = 900, H = Math.max(left.length, right.length) * 90 + 40, cy = H / 2;
+  const W = 1000, H = Math.max(left.length, right.length) * 90 + 40;
   const pos = (n: string, side: "l" | "r") => { const list = side === "l" ? left : right; const i = list.indexOf(n); return { x: side === "l" ? 230 : 670, y: 50 + i * 90 + (H - 40 - list.length * 90) / 2 }; };
   return (
     <section className={`${card} mt-4`}>
