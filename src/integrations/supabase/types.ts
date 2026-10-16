@@ -17,6 +17,7 @@ export type Database = {
       approval_reports: {
         Row: {
           ai_summary: string | null
+          approved_at: string | null
           approved_path: string | null
           author_name: string
           company_code: string
@@ -24,13 +25,16 @@ export type Database = {
           department: string
           draft_content: string | null
           draft_path: string
+          file_name: string | null
           id: string
+          is_embedded_to_rag: boolean | null
           signature_hash: string | null
           status: string | null
           title: string
         }
         Insert: {
           ai_summary?: string | null
+          approved_at?: string | null
           approved_path?: string | null
           author_name: string
           company_code: string
@@ -38,13 +42,16 @@ export type Database = {
           department: string
           draft_content?: string | null
           draft_path: string
+          file_name?: string | null
           id?: string
+          is_embedded_to_rag?: boolean | null
           signature_hash?: string | null
           status?: string | null
           title: string
         }
         Update: {
           ai_summary?: string | null
+          approved_at?: string | null
           approved_path?: string | null
           author_name?: string
           company_code?: string
@@ -52,7 +59,9 @@ export type Database = {
           department?: string
           draft_content?: string | null
           draft_path?: string
+          file_name?: string | null
           id?: string
+          is_embedded_to_rag?: boolean | null
           signature_hash?: string | null
           status?: string | null
           title?: string
@@ -61,55 +70,162 @@ export type Database = {
       }
       causal_graph_edges: {
         Row: {
+          company_code: string | null
+          created_at: string | null
           description: string | null
           id: string
           impact_weight: number | null
           relation_type: string
           source_entity: string
+          source_type: string | null
           target_entity: string
+          target_type: string | null
         }
         Insert: {
+          company_code?: string | null
+          created_at?: string | null
           description?: string | null
           id?: string
           impact_weight?: number | null
           relation_type: string
           source_entity: string
+          source_type?: string | null
           target_entity: string
+          target_type?: string | null
         }
         Update: {
+          company_code?: string | null
+          created_at?: string | null
           description?: string | null
           id?: string
           impact_weight?: number | null
           relation_type?: string
           source_entity?: string
+          source_type?: string | null
           target_entity?: string
+          target_type?: string | null
         }
         Relationships: []
       }
       companies: {
         Row: {
+          brand_kit_json: Json | null
           code: string
           created_at: string | null
           drive_folder_id: string | null
+          drive_root_folder_id: string | null
           id: string
           name: string
+          representative: string | null
           storage_quota_gb: number | null
+          tax_code: string | null
         }
         Insert: {
+          brand_kit_json?: Json | null
           code: string
           created_at?: string | null
           drive_folder_id?: string | null
+          drive_root_folder_id?: string | null
           id?: string
           name: string
+          representative?: string | null
           storage_quota_gb?: number | null
+          tax_code?: string | null
         }
         Update: {
+          brand_kit_json?: Json | null
           code?: string
           created_at?: string | null
           drive_folder_id?: string | null
+          drive_root_folder_id?: string | null
           id?: string
           name?: string
+          representative?: string | null
           storage_quota_gb?: number | null
+          tax_code?: string | null
+        }
+        Relationships: []
+      }
+      employee_companies: {
+        Row: {
+          company_code: string | null
+          company_id: string | null
+          created_at: string | null
+          department: string
+          id: string
+          role: string
+          storage_quota_gb: number | null
+          user_id: string
+        }
+        Insert: {
+          company_code?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          department?: string
+          id?: string
+          role?: string
+          storage_quota_gb?: number | null
+          user_id: string
+        }
+        Update: {
+          company_code?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          department?: string
+          id?: string
+          role?: string
+          storage_quota_gb?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folder_permissions: {
+        Row: {
+          can_approve: boolean | null
+          can_delete: boolean | null
+          can_edit: boolean | null
+          can_view: boolean | null
+          company_code: string
+          created_at: string | null
+          department: string | null
+          folder_id: string
+          folder_name: string
+          id: string
+          role: string
+        }
+        Insert: {
+          can_approve?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          company_code: string
+          created_at?: string | null
+          department?: string | null
+          folder_id: string
+          folder_name: string
+          id?: string
+          role: string
+        }
+        Update: {
+          can_approve?: boolean | null
+          can_delete?: boolean | null
+          can_edit?: boolean | null
+          can_view?: boolean | null
+          company_code?: string
+          created_at?: string | null
+          department?: string | null
+          folder_id?: string
+          folder_name?: string
+          id?: string
+          role?: string
         }
         Relationships: []
       }
@@ -117,29 +233,44 @@ export type Database = {
         Row: {
           company_code: string | null
           created_at: string | null
+          department: string | null
+          device_hash: string | null
           id: string
           latitude: number | null
+          location_address: string | null
           longitude: number | null
           photo_data: string | null
           staff_name: string | null
+          task_note: string | null
+          user_id: string | null
         }
         Insert: {
           company_code?: string | null
           created_at?: string | null
+          department?: string | null
+          device_hash?: string | null
           id?: string
           latitude?: number | null
+          location_address?: string | null
           longitude?: number | null
           photo_data?: string | null
           staff_name?: string | null
+          task_note?: string | null
+          user_id?: string | null
         }
         Update: {
           company_code?: string | null
           created_at?: string | null
+          department?: string | null
+          device_hash?: string | null
           id?: string
           latitude?: number | null
+          location_address?: string | null
           longitude?: number | null
           photo_data?: string | null
           staff_name?: string | null
+          task_note?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -149,8 +280,12 @@ export type Database = {
           content: string
           created_at: string | null
           domain: string
+          embedding: string | null
           id: string
+          parent_context: string | null
           source_citation: string | null
+          source_id: string | null
+          status: string | null
           title: string
         }
         Insert: {
@@ -158,8 +293,12 @@ export type Database = {
           content: string
           created_at?: string | null
           domain: string
+          embedding?: string | null
           id?: string
+          parent_context?: string | null
           source_citation?: string | null
+          source_id?: string | null
+          status?: string | null
           title: string
         }
         Update: {
@@ -167,8 +306,54 @@ export type Database = {
           content?: string
           created_at?: string | null
           domain?: string
+          embedding?: string | null
           id?: string
+          parent_context?: string | null
           source_citation?: string | null
+          source_id?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_at: string | null
+          assignee_name: string | null
+          company_code: string
+          completed_at: string | null
+          department: string
+          gps_verified: boolean | null
+          id: string
+          priority: string | null
+          started_at: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assignee_name?: string | null
+          company_code?: string
+          completed_at?: string | null
+          department: string
+          gps_verified?: boolean | null
+          id?: string
+          priority?: string | null
+          started_at?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assignee_name?: string | null
+          company_code?: string
+          completed_at?: string | null
+          department?: string
+          gps_verified?: boolean | null
+          id?: string
+          priority?: string | null
+          started_at?: string | null
+          status?: string | null
           title?: string
         }
         Relationships: []
@@ -178,7 +363,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_jetbu_knowledge: {
+        Args: {
+          filter_domain?: string
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          domain: string
+          id: string
+          parent_context: string
+          similarity: number
+          title: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
