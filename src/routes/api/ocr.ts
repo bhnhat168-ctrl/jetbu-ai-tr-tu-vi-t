@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/ocr")({
         const desc = KIND[kind ?? ""] ?? KIND["invoice"];
         return streamGatewayText({
           json: true,
+          rules: false,
           signal: request.signal,
           system: `Bạn là hệ thống OCR giấy tờ Việt Nam. Đọc chính xác chữ trong ảnh, KHÔNG bịa. Trường không đọc được để chuỗi rỗng. Chỉ xuất json: {"doc_type":"...","fields":[{"label":"tên trường tiếng Việt","value":"giá trị"}],"raw_text":"toàn bộ chữ đọc được"}`,
           user: [

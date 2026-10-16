@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { findModel } from "@/lib/ai-models";
+import { brainStream } from "@/lib/brain.server";
 
 type Msg = { role: "user" | "assistant"; content: string };
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
@@ -14,9 +15,11 @@ export const Route = createFileRoute("/api/chat")({
         const model = findModel(body.modelKey);
         const system = `${model.persona} Bạn là JETBU AI – Siêu trí tuệ quản trị & cố vấn chiến lược. Luôn trả lời bằng tiếng Việt chuyên nghiệp. Pháp nhân đang làm việc: ${body.companyName ?? "chưa chọn"}.${body.canvas ? " Người dùng đang soạn thảo song song: khi được yêu cầu soạn văn bản, hãy viết văn bản hoàn chỉnh dạng markdown." : ""}`;
         const messages = (body.messages ?? []).slice(-30);
+        // Non-Claude models go through the JETBU AI Brain (own Gemini/Groq key first, else built-in AI).
+        if (model.api !== "messages") return brainStream({ system, messages, signal: request.signal });
 
         const upstream =
-          model.api === "messages"
+          true
             ? await fetch(`${GATEWAY}/messages`, {
                 method: "POST",
                 signal: request.signal,

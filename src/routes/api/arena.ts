@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { brainStream } from "@/lib/brain.server";
 
 const SYSTEM = `Bạn là Hội đồng Tranh biện 6 Tác tử của JETBU AI. Trả lời HOÀN TOÀN bằng tiếng Việt, chỉ xuất một đối tượng JSON hợp lệ (json), không kèm chữ nào khác.
 6 chuyên gia (id 1-6):
@@ -22,51 +23,11 @@ export const Route = createFileRoute("/api/arena")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = process.env["LOVABLE_API_KEY"];
-        if (!key) return Response.json({ error: "Chưa cấu hình khóa AI." }, { status: 500 });
         const { problem, companyName } = (await request.json()) as { problem: string; companyName?: string };
-        const up = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          signal: request.signal,
-          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            stream: true,
-            response_format: { type: "json_object" },
-            messages: [
-              { role: "system", content: SYSTEM },
-              { role: "user", content: `Pháp nhân: ${companyName ?? "chưa chọn"}.\nBài toán chiến lược (trả về json):\n${String(problem).slice(0, 6000)}` },
-            ],
-          }),
+        return brainStream({
+          system: SYSTEM, json: true, signal: request.signal,
+          messages: [{ role: "user", content: `Pháp nhân: ${companyName ?? "chưa chọn"}.\nBài toán chiến lược (trả về json):\n${String(problem).slice(0, 6000)}` }],
         });
-        if (!up.ok || !up.body) {
-          const s = up.status;
-          const msg = s === 429 ? "Hệ thống AI đang quá tải, thử lại sau ít phút." : s === 402 ? "Đã hết tín dụng AI. Nạp thêm trong Cài đặt → Gói & tín dụng." : "Không thể kết nối AI lúc này.";
-          return Response.json({ error: msg }, { status: s });
-        }
-        const dec = new TextDecoder();
-        const enc = new TextEncoder();
-        let buf = "";
-        const stream = up.body.pipeThrough(
-          new TransformStream<Uint8Array, Uint8Array>({
-            transform(chunk, ctrl) {
-              buf += dec.decode(chunk, { stream: true });
-              const lines = buf.split("\n");
-              buf = lines.pop() ?? "";
-              for (const l of lines) {
-                const t = l.trim();
-                if (!t.startsWith("data:")) continue;
-                const d = t.slice(5).trim();
-                if (!d || d === "[DONE]") continue;
-                try {
-                  const c = JSON.parse(d).choices?.[0]?.delta?.content;
-                  if (c) ctrl.enqueue(enc.encode(c));
-                } catch { /* partial */ }
-              }
-            },
-          }),
-        );
-        return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
       },
     },
   },
