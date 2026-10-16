@@ -8,4 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-- All AI text calls go through src/lib/brain.server.ts (own GEMINI_API_KEY → GROQ_API_KEY → Lovable AI); why: one place for the 5-step/council system rules and provider choice. No Supabase Edge Functions (TanStack server routes instead).
+- All AI text calls go through src/lib/brain.server.ts, which tries providers in order with auto-fallback (picked model → OpenRouter → Groq → Gemini → Lovable AI); keys come from secrets plus write-only runtime overrides from Admin Tab 5, never sent to the browser; why: one place for the 5-step/council rules and provider choice. No Supabase Edge Functions (TanStack server routes instead).
