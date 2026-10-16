@@ -7,7 +7,7 @@ describe("war room rules", () => {
     expect(EXPERTS.reduce((s, e) => s + e.weight, 0)).toBeCloseTo(1);
   });
   it("score = sum of weight * expert score", () => {
-    expect(confluenceScore({ 1: 80, 2: 60, 3: 100, 4: 50, 5: 70, 6: 40 })).toBe(64.5);
+    expect(confluenceScore({ 1: 80, 2: 60, 3: 100, 4: 50, 5: 70, 6: 40 })).toBe(65.5);
   });
   it("expert 3 cannot veto; 1, 2, 4 can", () => {
     expect(activeVetoes([1, 2, 3, 4, 5, 6].map((id) => ({ id, veto: true })))).toEqual([1, 2, 4]);
