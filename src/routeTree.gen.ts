@@ -10,33 +10,91 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChienLuocRouteImport } from './routes/chien-luoc'
+import { Route as PhapLyRouteImport } from './routes/phap-ly'
+import { Route as QuanTriRouteImport } from './routes/quan-tri'
+import { Route as TriThucRouteImport } from './routes/tri-thuc'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChienLuocRoute = ChienLuocRouteImport.update({
+  id: '/chien-luoc',
+  path: '/chien-luoc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhapLyRoute = PhapLyRouteImport.update({
+  id: '/phap-ly',
+  path: '/phap-ly',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuanTriRoute = QuanTriRouteImport.update({
+  id: '/quan-tri',
+  path: '/quan-tri',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TriThucRoute = TriThucRouteImport.update({
+  id: '/tri-thuc',
+  path: '/tri-thuc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chien-luoc': typeof ChienLuocRoute
+  '/phap-ly': typeof PhapLyRoute
+  '/quan-tri': typeof QuanTriRoute
+  '/tri-thuc': typeof TriThucRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chien-luoc': typeof ChienLuocRoute
+  '/phap-ly': typeof PhapLyRoute
+  '/quan-tri': typeof QuanTriRoute
+  '/tri-thuc': typeof TriThucRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chien-luoc': typeof ChienLuocRoute
+  '/phap-ly': typeof PhapLyRoute
+  '/quan-tri': typeof QuanTriRoute
+  '/tri-thuc': typeof TriThucRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/chien-luoc' | '/phap-ly' | '/quan-tri' | '/tri-thuc' | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/chien-luoc' | '/phap-ly' | '/quan-tri' | '/tri-thuc' | '/api/chat'
+  id:
+    | '__root__'
+    | '/'
+    | '/chien-luoc'
+    | '/phap-ly'
+    | '/quan-tri'
+    | '/tri-thuc'
+    | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChienLuocRoute: typeof ChienLuocRoute
+  PhapLyRoute: typeof PhapLyRoute
+  QuanTriRoute: typeof QuanTriRoute
+  TriThucRoute: typeof TriThucRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +106,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chien-luoc': {
+      id: '/chien-luoc'
+      path: '/chien-luoc'
+      fullPath: '/chien-luoc'
+      preLoaderRoute: typeof ChienLuocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/phap-ly': {
+      id: '/phap-ly'
+      path: '/phap-ly'
+      fullPath: '/phap-ly'
+      preLoaderRoute: typeof PhapLyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quan-tri': {
+      id: '/quan-tri'
+      path: '/quan-tri'
+      fullPath: '/quan-tri'
+      preLoaderRoute: typeof QuanTriRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tri-thuc': {
+      id: '/tri-thuc'
+      path: '/tri-thuc'
+      fullPath: '/tri-thuc'
+      preLoaderRoute: typeof TriThucRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChienLuocRoute: ChienLuocRoute,
+  PhapLyRoute: PhapLyRoute,
+  QuanTriRoute: QuanTriRoute,
+  TriThucRoute: TriThucRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
