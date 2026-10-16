@@ -16,7 +16,8 @@ export const summarizeReport = createServerFn({ method: "POST" })
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "openai/gpt-6-astra",
+        reasoning_effort: "low",
         messages: [
           { role: "system", content: "Bạn là thư ký điều hành. Tóm tắt báo cáo bằng tiếng Việt: 3-5 gạch đầu dòng ý chính, 1 dòng rủi ro, 1 dòng đề xuất." },
           { role: "user", content: `Tiêu đề: ${r.title}\nPhòng ban: ${r.department}\n\n${(r.draft_content ?? "").slice(0, 30000)}` },
