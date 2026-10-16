@@ -15,8 +15,8 @@ export async function sha256Hex(text: string): Promise<string> {
 export const AI_KEYS = [
   { env: "GEMINI_PRO_API_KEY", label: "Google Gemini Pro" },
   { env: "GEMINI_API_KEY", label: "Google Gemini Flash Free" },
-  { env: "GROQ_API_KEY", label: "Groq Siêu tốc — Llama 3.3 70B" },
-  { env: "OPENROUTER_API_KEY", label: "OpenRouter — DeepSeek V3 / R1 Free" },
+  { env: "GROQ_API_KEY", label: "Groq Siêu tốc — GPT-OSS 120B" },
+  { env: "OPENROUTER_API_KEY", label: "OpenRouter — DeepSeek V4" },
   { env: "ANTHROPIC_API_KEY", label: "Claude / Anthropic" },
 ] as const;
 

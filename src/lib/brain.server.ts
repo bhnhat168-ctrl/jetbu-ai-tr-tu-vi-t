@@ -37,11 +37,11 @@ function buildChain(preferred: string | undefined, needsVision: boolean): Provid
   const gemPro = getKey("GEMINI_PRO_API_KEY"), gem = getKey("GEMINI_API_KEY"), lov = process.env["LOVABLE_API_KEY"];
   const orH = { "HTTP-Referer": "https://jetbu.ai", "X-Title": "JETBU AI" };
   const all: Record<string, Provider | null> = {
-    "deepseek-v3": or ? { name: "OpenRouter DeepSeek V3", url: OR_URL, key: or, model: "deepseek/deepseek-chat:free", headers: orH, vision: false, jsonMode: true } : null,
-    "deepseek-r1": or ? { name: "OpenRouter DeepSeek R1", url: OR_URL, key: or, model: "deepseek/deepseek-r1:free", headers: orH, vision: false, jsonMode: false } : null,
-    groq: groq ? { name: "Groq Llama 3.3 70B", url: GROQ_URL, key: groq, model: "llama-3.3-70b-versatile", headers: {}, vision: false, jsonMode: true } : null,
-    "gemini-pro": gemPro || gem ? { name: "Gemini 2.5 Pro", url: GEM_URL, key: (gemPro || gem)!, model: "gemini-2.5-pro", headers: {}, vision: true, jsonMode: true } : null,
-    "gemini-flash": gem || gemPro ? { name: "Gemini 2.5 Flash", url: GEM_URL, key: (gem || gemPro)!, model: "gemini-2.5-flash", headers: {}, vision: true, jsonMode: true } : null,
+    "deepseek-v3": or ? { name: "OpenRouter DeepSeek V3", url: OR_URL, key: or, model: "deepseek/deepseek-v4-flash", headers: orH, vision: false, jsonMode: true } : null,
+    "deepseek-r1": or ? { name: "OpenRouter DeepSeek R1", url: OR_URL, key: or, model: "deepseek/deepseek-v4-pro", headers: orH, vision: false, jsonMode: false } : null,
+    groq: groq ? { name: "Groq GPT-OSS 120B", url: GROQ_URL, key: groq, model: "openai/gpt-oss-120b", headers: {}, vision: false, jsonMode: true } : null,
+    "gemini-pro": gemPro || gem ? { name: "Gemini Pro", url: GEM_URL, key: (gemPro || gem)!, model: "gemini-pro-latest", headers: {}, vision: true, jsonMode: true } : null,
+    "gemini-flash": gem || gemPro ? { name: "Gemini Flash", url: GEM_URL, key: (gem || gemPro)!, model: "gemini-flash-latest", headers: {}, vision: true, jsonMode: true } : null,
     lovable: lov ? { name: "Lovable AI", url: "https://ai.gateway.lovable.dev/v1/chat/completions", key: lov, model: "google/gemini-3-flash-preview", headers: { "X-Lovable-AIG-SDK": "fetch" }, vision: true, jsonMode: true } : null,
   };
   const order = [preferred && preferred !== "auto" ? preferred : "", preferred === "deepseek-r1" ? "deepseek-r1" : "deepseek-v3", "groq", "gemini-pro", "gemini-flash", "lovable"];
