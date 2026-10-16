@@ -33,8 +33,8 @@ function Workspace() {
     setBusy(false);
   }, [sessionKey]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
-  useEffect(() => inputRef.current?.focus(), [busy, split]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { inputRef.current?.focus(); }, [busy, split]);
 
   const send = async () => {
     const text = draftInput.trim();
