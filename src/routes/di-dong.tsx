@@ -108,8 +108,8 @@ function CheckIn() {
   const [pos, setPos] = useState<GeolocationPosition | null>(null);
 
   const start = async () => {
-    if (!company) return toast.error("Hãy chọn công ty trước.");
-    if (!staff.trim()) return toast.error("Nhập họ tên nhân viên.");
+    if (!company) { toast.error("Hãy chọn công ty trước."); return; }
+    if (!staff.trim()) { toast.error("Nhập họ tên nhân viên."); return; }
     setPhoto(null);
     try { setPos(await getPosition()); setOpen(true); } catch (e) { toast.error((e as Error).message); }
   };
@@ -194,11 +194,11 @@ function Ocr() {
       <h2 className="text-xl font-bold">Quét giấy tờ thông minh (OCR)</h2>
       <div className="grid grid-cols-3 gap-2">
         {[["invoice", "Hóa đơn"], ["contract", "Hợp đồng"], ["cccd", "CCCD"]].map(([k, l]) => (
-          <button key={k} onClick={() => setKind(k)} className={`rounded-xl border py-3 text-lg font-semibold ${kind === k ? "border-primary bg-primary/10 text-primary" : ""}`}>{l}</button>
+          <button key={k} onClick={() => setKind(k ?? "invoice")} className={`rounded-xl border py-3 text-lg font-semibold ${kind === k ? "border-primary bg-primary/10 text-primary" : ""}`}>{l}</button>
         ))}
       </div>
       {!open && (
-        <button onClick={() => { if (!company) return toast.error("Hãy chọn công ty trước."); setOpen(true); }} disabled={busy}
+        <button onClick={() => { if (!company) { toast.error("Hãy chọn công ty trước."); return; } setOpen(true); }} disabled={busy}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-4 text-xl font-bold text-primary-foreground disabled:opacity-50">
           <Camera className="h-6 w-6" /> Chụp giấy tờ
         </button>
@@ -247,8 +247,8 @@ function ESign() {
   const clear = () => { const c = ref.current!; c.getContext("2d")!.clearRect(0, 0, c.width, c.height); setHasInk(false); setSeal(null); };
 
   const finalize = async () => {
-    if (!company) return toast.error("Hãy chọn công ty trước.");
-    if (!signer.trim() || !hasInk) return toast.error("Nhập họ tên và ký vào khung.");
+    if (!company) { toast.error("Hãy chọn công ty trước."); return; }
+    if (!signer.trim() || !hasInk) { toast.error("Nhập họ tên và ký vào khung."); return; }
     const png = ref.current!.toDataURL("image/png");
     const at = new Date().toISOString();
     const code = await sha256Hex(signaturePayload({ png, signer: signer.trim(), at, companyCode: company.code }));
