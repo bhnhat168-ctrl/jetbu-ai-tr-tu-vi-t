@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = process.env.LOVABLE_API_KEY;
+        const key = process.env["LOVABLE_API_KEY"];
         if (!key) return Response.json({ error: "Chưa cấu hình khóa AI." }, { status: 500 });
         const body = (await request.json()) as { messages: Msg[]; modelKey: string; companyName?: string; canvas?: boolean };
         const model = findModel(body.modelKey);

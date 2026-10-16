@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!company && companies.length) switchCompany(companies[0]);
+    if (!company && companies[0]) switchCompany(companies[0]);
   }, [companies, company, switchCompany]);
 
   const onSwitch = (id: string) => {
