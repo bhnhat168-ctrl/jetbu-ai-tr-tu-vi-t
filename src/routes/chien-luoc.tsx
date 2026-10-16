@@ -235,9 +235,12 @@ function CausalGraph() {
       return data;
     },
   });
-  const nodes = Array.from(new Set(data.flatMap((e) => [e.source_entity, e.target_entity])));
-  const W = 900, H = Math.max(320, nodes.length * 45), cx = W / 2, cy = H / 2, R = Math.min(cx, cy) - 70;
-  const pos = (n: string) => { const i = nodes.indexOf(n); const a = (2 * Math.PI * i) / nodes.length - Math.PI / 2; return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) }; };
+  // Two-column layout: causes on the left, effects on the right, so labels never overlap.
+  const left = Array.from(new Set(data.map((e) => e.source_entity)));
+  const right = Array.from(new Set(data.map((e) => e.target_entity)));
+  const nodes = [...left, ...right];
+  const W = 900, H = Math.max(left.length, right.length) * 90 + 40, cy = H / 2;
+  const pos = (n: string, side: "l" | "r") => { const list = side === "l" ? left : right; const i = list.indexOf(n); return { x: side === "l" ? 230 : 670, y: 50 + i * 90 + (H - 40 - list.length * 90) / 2 }; };
   return (
     <section className={`${card} mt-4`}>
       <h2 className="text-xl font-semibold text-gold">Sơ đồ Đồ thị Nhân quả</h2>
@@ -245,11 +248,11 @@ function CausalGraph() {
         <>
           <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 w-full">
             <defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--gold)" /></marker></defs>
-            {data.map((e) => { const a = pos(e.source_entity), b = pos(e.target_entity); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-              return (<g key={e.id}><line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--gold)" strokeWidth={1 + Number(e.impact_weight ?? 1) * 2} markerEnd="url(#arr)" opacity="0.8" />
+            {data.map((e) => { const a = pos(e.source_entity, "l"), b = pos(e.target_entity, "r"); const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+              return (<g key={e.id}><line x1={a.x + 10} y1={a.y} x2={b.x - 10} y2={b.y} stroke="var(--gold)" strokeWidth={1 + Number(e.impact_weight ?? 1) * 2} markerEnd="url(#arr)" opacity="0.8" />
                 <text x={mx} y={my - 6} textAnchor="middle" fill="var(--gold)" fontSize="13" fontWeight="700">{e.relation_type.replace(/\s+/g, " ")}</text></g>); })}
-            {nodes.map((n) => { const p = pos(n); return (<g key={n}><circle cx={p.x} cy={p.y} r="8" fill="var(--primary-glow)" />
-              <text x={p.x} y={p.y + (p.y > cy ? 26 : -16)} textAnchor="middle" fill="var(--command-foreground)" fontSize="14">{n.replace(/\s+/g, " ")}</text></g>); })}
+            {nodes.map((n, idx) => { const side = idx < left.length ? "l" : "r"; const p = pos(n, side); return (<g key={side + n}><circle cx={p.x} cy={p.y} r="8" fill="var(--primary-glow)" />
+              <text x={side === "l" ? p.x - 14 : p.x + 14} y={p.y + 5} textAnchor={side === "l" ? "end" : "start"} fill="var(--command-foreground)" fontSize="14">{n.replace(/\s+/g, " ")}</text></g>); })}
           </svg>
           <ul className="mt-3 space-y-1 text-sm text-command-muted">
             {data.map((e) => <li key={e.id}>• {e.source_entity} → <b className="text-gold">{e.relation_type}</b> → {e.target_entity} (trọng số {e.impact_weight})</li>)}
