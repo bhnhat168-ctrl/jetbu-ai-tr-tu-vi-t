@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, CheckCircle2, Loader2, Upload, FileSignature, KeyRound, HardDrive, Eye, MapPin, Trash2, Sparkles as _unused } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Upload, FileSignature, KeyRound, HardDrive, Eye, MapPin, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,6 @@ import { DEPARTMENT_PROMPTS } from "@/lib/prompts";
 import { AI_KEYS } from "@/lib/approval";
 import { approveReport, checkConnections, summarizeReport } from "@/lib/admin.functions";
 
-void _unused;
 
 export const Route = createFileRoute("/quan-tri")({
   head: () => ({ meta: [
