@@ -1,7 +1,7 @@
 /**
- * JETBU AI Brain — one server-side entry for every AI feature (chat, arena, legal, knowledge).
- * Provider order: own GEMINI_API_KEY → own GROQ_API_KEY → built-in Lovable AI.
- * Keys are read only on the server; they never reach the browser.
+ * JETBU AI Brain — one server-side entry for every AI feature (chat, arena, legal, knowledge, reports).
+ * Tries providers in order with automatic fallback: user's pick → OpenRouter DeepSeek → Groq → Gemini Pro/Flash → Lovable AI.
+ * Keys come from server secrets, optionally overridden at runtime from Admin Tab 5. They never reach the browser.
  */
 export const BRAIN_RULES = `
 [QUY TẮC JETBU AI BRAIN]
@@ -17,66 +17,110 @@ Nếu đầu ra được yêu cầu là json thì vẫn tuân theo đúng cấu 
 
 type Msg = { role: "system" | "user" | "assistant"; content: unknown };
 
-function pickProvider(needsVision: boolean) {
-  const gemini = process.env["GEMINI_API_KEY"];
-  const groq = process.env["GROQ_API_KEY"];
-  if (gemini) return { name: "Gemini (khóa riêng)", url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", key: gemini, model: "gemini-2.5-flash", headers: {} as Record<string, string> };
-  if (groq && !needsVision) return { name: "Groq (khóa riêng)", url: "https://api.groq.com/openai/v1/chat/completions", key: groq, model: "llama-3.3-70b-versatile", headers: {} };
-  const lovable = process.env["LOVABLE_API_KEY"];
-  if (!lovable) return null;
-  return { name: "Lovable AI", url: "https://ai.gateway.lovable.dev/v1/chat/completions", key: lovable, model: "google/gemini-3-flash-preview", headers: { "X-Lovable-AIG-SDK": "fetch" } };
+/** Runtime overrides set from Admin Tab 5 (lives while the server instance is warm). */
+const runtimeKeys: Record<string, string> = {};
+export function setRuntimeKeys(keys: Record<string, string>) {
+  for (const [k, v] of Object.entries(keys)) if (v.trim()) runtimeKeys[k] = v.trim();
+}
+export function getKey(env: string): string | undefined {
+  return runtimeKeys[env] || process.env[env] || undefined;
 }
 
-export function brainProviderName(): string {
-  return pickProvider(false)?.name ?? "Chưa có";
-}
+type Provider = { name: string; url: string; key: string; model: string; headers: Record<string, string>; vision: boolean; jsonMode: boolean };
 
-export async function brainStream(opts: { system: string; messages: Msg[]; signal: AbortSignal; json?: boolean | undefined; rules?: boolean | undefined }): Promise<Response> {
-  const needsVision = opts.messages.some((m) => Array.isArray(m.content));
-  const p = pickProvider(needsVision);
-  if (!p) return Response.json({ error: "Chưa cấu hình khóa AI." }, { status: 500 });
-  const system = opts.rules === false ? opts.system : `${opts.system}\n${BRAIN_RULES}`;
-  const up = await fetch(p.url, {
-    method: "POST",
-    signal: opts.signal,
-    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.headers },
-    body: JSON.stringify({
-      model: p.model,
-      stream: true,
-      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
-      messages: [{ role: "system", content: system }, ...opts.messages],
-    }),
-  });
-  if (!up.ok || !up.body) {
-    const s = up.status;
-    const msg =
-      s === 429 ? `${p.name} đang quá tải, thử lại sau ít phút.` :
-      s === 402 ? "Đã hết tín dụng AI. Nạp thêm trong Cài đặt → Gói & tín dụng." :
-      s === 401 || s === 403 ? `${p.name} từ chối khóa API — hãy kiểm tra lại khóa.` :
-      `Không thể kết nối ${p.name} lúc này.`;
-    return Response.json({ error: msg }, { status: s });
+const OR_URL = "https://openrouter.ai/api/v1/chat/completions";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GEM_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+function buildChain(preferred: string | undefined, needsVision: boolean): Provider[] {
+  const or = getKey("OPENROUTER_API_KEY"), groq = getKey("GROQ_API_KEY");
+  const gemPro = getKey("GEMINI_PRO_API_KEY"), gem = getKey("GEMINI_API_KEY"), lov = process.env["LOVABLE_API_KEY"];
+  const orH = { "HTTP-Referer": "https://jetbu.ai", "X-Title": "JETBU AI" };
+  const all: Record<string, Provider | null> = {
+    "deepseek-v3": or ? { name: "OpenRouter DeepSeek V3", url: OR_URL, key: or, model: "deepseek/deepseek-chat:free", headers: orH, vision: false, jsonMode: true } : null,
+    "deepseek-r1": or ? { name: "OpenRouter DeepSeek R1", url: OR_URL, key: or, model: "deepseek/deepseek-r1:free", headers: orH, vision: false, jsonMode: false } : null,
+    groq: groq ? { name: "Groq Llama 3.3 70B", url: GROQ_URL, key: groq, model: "llama-3.3-70b-versatile", headers: {}, vision: false, jsonMode: true } : null,
+    "gemini-pro": gemPro || gem ? { name: "Gemini 2.5 Pro", url: GEM_URL, key: (gemPro || gem)!, model: "gemini-2.5-pro", headers: {}, vision: true, jsonMode: true } : null,
+    "gemini-flash": gem || gemPro ? { name: "Gemini 2.5 Flash", url: GEM_URL, key: (gem || gemPro)!, model: "gemini-2.5-flash", headers: {}, vision: true, jsonMode: true } : null,
+    lovable: lov ? { name: "Lovable AI", url: "https://ai.gateway.lovable.dev/v1/chat/completions", key: lov, model: "google/gemini-3-flash-preview", headers: { "X-Lovable-AIG-SDK": "fetch" }, vision: true, jsonMode: true } : null,
+  };
+  const order = [preferred && preferred !== "auto" ? preferred : "", preferred === "deepseek-r1" ? "deepseek-r1" : "deepseek-v3", "groq", "gemini-pro", "gemini-flash", "lovable"];
+  const seen = new Set<string>();
+  const chain: Provider[] = [];
+  for (const k of order) {
+    const p = k ? all[k] : null;
+    if (!p || seen.has(k) || (needsVision && !p.vision)) continue;
+    seen.add(k); chain.push(p);
   }
-  const dec = new TextDecoder();
-  const enc = new TextEncoder();
+  return chain;
+}
+
+export function brainProviderName(preferred?: string): string {
+  return buildChain(preferred, false)[0]?.name ?? "Chưa có";
+}
+
+async function openUpstream(opts: { system: string; messages: Msg[]; signal: AbortSignal; json?: boolean | undefined; rules?: boolean | undefined; preferredModelKey?: string | undefined }) {
+  const needsVision = opts.messages.some((m) => Array.isArray(m.content));
+  const chain = buildChain(opts.preferredModelKey, needsVision);
+  if (!chain.length) return { error: Response.json({ error: "Chưa cấu hình khóa AI nào." }, { status: 500 }) };
+  let system = opts.rules === false ? opts.system : `${opts.system}\n${BRAIN_RULES}`;
+  let last = 0;
+  for (const p of chain) {
+    const sys = opts.json && !p.jsonMode ? `${system}\nCHỈ xuất một đối tượng JSON hợp lệ, không thêm chữ nào khác.` : system;
+    try {
+      const up = await fetch(p.url, {
+        method: "POST",
+        signal: opts.signal,
+        headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.headers },
+        body: JSON.stringify({
+          model: p.model,
+          stream: true,
+          ...(opts.json && p.jsonMode ? { response_format: { type: "json_object" } } : {}),
+          messages: [{ role: "system", content: sys }, ...opts.messages],
+        }),
+      });
+      if (up.ok && up.body) return { up, p };
+      last = up.status;
+      console.warn(`[brain] ${p.name} failed ${up.status}, trying next`);
+      await up.body?.cancel();
+    } catch (e) {
+      if (opts.signal.aborted) return { error: new Response(null, { status: 499 }) };
+      console.warn(`[brain] ${p.name} error`, e);
+    }
+  }
+  system = "";
+  const msg = last === 429 ? "Tất cả nhà cung cấp AI đang quá tải, thử lại sau ít phút." : last === 402 ? "Đã hết tín dụng AI." : "Không nhà cung cấp AI nào phản hồi — hãy kiểm tra khóa ở Tab 5.";
+  return { error: Response.json({ error: msg }, { status: last || 502 }) };
+}
+
+function textStream(body: ReadableStream<Uint8Array>) {
+  const dec = new TextDecoder(), enc = new TextEncoder();
   let buf = "";
-  const stream = up.body.pipeThrough(
-    new TransformStream<Uint8Array, Uint8Array>({
-      transform(chunk, ctrl) {
-        buf += dec.decode(chunk, { stream: true });
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-        for (const l of lines) {
-          const t = l.trim();
-          if (!t.startsWith("data:")) continue;
-          const d = t.slice(5).trim();
-          if (!d || d === "[DONE]") continue;
-          try {
-            const c = JSON.parse(d).choices?.[0]?.delta?.content;
-            if (c) ctrl.enqueue(enc.encode(c));
-          } catch { /* partial frame */ }
-        }
-      },
-    }),
-  );
-  return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-JETBU-Provider": encodeURIComponent(p.name) } });
+  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, ctrl) {
+      buf += dec.decode(chunk, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop() ?? "";
+      for (const l of lines) {
+        const t = l.trim();
+        if (!t.startsWith("data:")) continue;
+        const d = t.slice(5).trim();
+        if (!d || d === "[DONE]") continue;
+        try { const c = JSON.parse(d).choices?.[0]?.delta?.content; if (c) ctrl.enqueue(enc.encode(c)); } catch { /* partial */ }
+      }
+    },
+  }));
+}
+
+export async function brainStream(opts: { system: string; messages: Msg[]; signal: AbortSignal; json?: boolean | undefined; rules?: boolean | undefined; preferredModelKey?: string | undefined }): Promise<Response> {
+  const r = await openUpstream(opts);
+  if ("error" in r) return r.error!;
+  return new Response(textStream(r.up.body!), { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-JETBU-Provider": encodeURIComponent(r.p.name) } });
+}
+
+/** Full text answer (still streamed upstream), used by server functions such as report summaries. */
+export async function brainComplete(opts: { system: string; user: string; rules?: boolean; preferredModelKey?: string }): Promise<string> {
+  const res = await brainStream({ system: opts.system, messages: [{ role: "user", content: opts.user }], signal: new AbortController().signal, rules: opts.rules, preferredModelKey: opts.preferredModelKey });
+  if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "AI lỗi");
+  return (await res.text()).replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }

@@ -13,9 +13,15 @@ export async function sha256Hex(text: string): Promise<string> {
 }
 
 export const AI_KEYS = [
-  { env: "GEMINI_API_KEY", label: "Google Gemini" },
-  { env: "GROQ_API_KEY", label: "Groq" },
-  { env: "DEEPSEEK_API_KEY", label: "DeepSeek" },
-  { env: "ANTHROPIC_API_KEY", label: "Claude (Anthropic)" },
-  { env: "XAI_API_KEY", label: "Grok (xAI)" },
+  { env: "GEMINI_PRO_API_KEY", label: "Google Gemini Pro" },
+  { env: "GEMINI_API_KEY", label: "Google Gemini Flash Free" },
+  { env: "GROQ_API_KEY", label: "Groq Siêu tốc — Llama 3.3 70B" },
+  { env: "OPENROUTER_API_KEY", label: "OpenRouter — DeepSeek V3 / R1 Free" },
+  { env: "ANTHROPIC_API_KEY", label: "Claude / Anthropic" },
 ] as const;
+
+/** Strips DeepSeek <think> blocks and ```json fences, returning the outermost {...}. */
+export function cleanJson(raw: string): string {
+  const s = raw.replace(/<think>[\s\S]*?<\/think>/g, "").replace(/<think>[\s\S]*$/g, "").replace(/```(?:json)?/gi, "");
+  return s.slice(s.indexOf("{"), s.lastIndexOf("}") + 1);
+}
