@@ -34,6 +34,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-command: var(--command);
+  --color-command-card: var(--command-card);
+  --color-command-foreground: var(--command-foreground);
+  --color-command-muted: var(--command-muted);
+  --color-gold: var(--gold);
 }
 
 :root {
@@ -54,6 +59,11 @@
   --accent: oklch(0.82 0.15 85);
   --accent-foreground: oklch(0.25 0.05 70);
   --destructive: oklch(0.58 0.23 27);
+  --command: oklch(0.18 0.03 170);
+  --command-card: oklch(0.23 0.035 168);
+  --command-foreground: oklch(0.95 0.01 160);
+  --command-muted: oklch(0.7 0.03 160);
+  --gold: oklch(0.8 0.13 85);
   --destructive-foreground: oklch(0.99 0 0);
   --sidebar: oklch(0.22 0.05 165);
   --sidebar-foreground: oklch(0.92 0.02 160);
