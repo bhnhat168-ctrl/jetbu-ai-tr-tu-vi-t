@@ -22,6 +22,7 @@ export type Database = {
           company_code: string
           created_at: string | null
           department: string
+          draft_content: string | null
           draft_path: string
           id: string
           signature_hash: string | null
@@ -35,6 +36,7 @@ export type Database = {
           company_code: string
           created_at?: string | null
           department: string
+          draft_content?: string | null
           draft_path: string
           id?: string
           signature_hash?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           company_code?: string
           created_at?: string | null
           department?: string
+          draft_content?: string | null
           draft_path?: string
           id?: string
           signature_hash?: string | null

@@ -167,7 +167,7 @@ function Workspace() {
 }
 
 function RightPanel({ onPick }: { onPick: (p: string) => void }) {
-  const { tasks, setTasks } = useWorkspace();
+  const { tasks, setTasks, viewAsStaff } = useWorkspace();
   const [newTask, setNewTask] = useState("");
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 xl:w-80">
@@ -178,7 +178,7 @@ function RightPanel({ onPick }: { onPick: (p: string) => void }) {
             <li key={t.id} className="flex items-center gap-2 text-base">
               <input type="checkbox" checked={t.done} onChange={() => setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done: !x.done } : x)))} className="h-5 w-5 accent-primary" />
               <span className={`flex-1 ${t.done ? "text-muted-foreground line-through" : ""}`}>{t.text}</span>
-              <button aria-label="Xóa" onClick={() => setTasks((ts) => ts.filter((x) => x.id !== t.id))}><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
+              <button aria-label="Xóa" disabled={viewAsStaff} className="disabled:opacity-30" onClick={() => setTasks((ts) => ts.filter((x) => x.id !== t.id))}><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
             </li>
           ))}
         </ul>

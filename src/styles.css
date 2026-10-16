@@ -39,6 +39,8 @@
   --color-command-foreground: var(--command-foreground);
   --color-command-muted: var(--command-muted);
   --color-gold: var(--gold);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 }
 
 :root {
@@ -64,6 +66,8 @@
   --command-foreground: oklch(0.95 0.01 160);
   --command-muted: oklch(0.7 0.03 160);
   --gold: oklch(0.8 0.13 85);
+  --warning: oklch(0.72 0.18 55);
+  --warning-foreground: oklch(0.18 0.03 50);
   --destructive-foreground: oklch(0.99 0 0);
   --sidebar: oklch(0.22 0.05 165);
   --sidebar-foreground: oklch(0.92 0.02 160);

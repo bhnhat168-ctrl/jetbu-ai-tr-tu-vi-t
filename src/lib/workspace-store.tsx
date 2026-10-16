@@ -16,6 +16,8 @@ type WorkspaceState = {
   setDraftInput: (t: string) => void;
   setTasks: (fn: (t: Task[]) => Task[]) => void;
   switchCompany: (c: Company) => void;
+  viewAsStaff: boolean;
+  setViewAsStaff: (v: boolean) => void;
 };
 
 const defaultTasks = (): Task[] => [
@@ -33,6 +35,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [draftInput, setDraftInput] = useState("");
   const [tasks, setTasksState] = useState<Task[]>(defaultTasks);
   const [sessionKey, setSessionKey] = useState(0);
+  const [viewAsStaff, setViewAsStaff] = useState(false);
 
   const setMessages = useCallback((fn: (m: ChatMessage[]) => ChatMessage[]) => setMessagesState(fn), []);
   const setTasks = useCallback((fn: (t: Task[]) => Task[]) => setTasksState(fn), []);
@@ -49,7 +52,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider
-      value={{ company, messages, canvasText, draftInput, tasks, sessionKey, setMessages, setCanvasText, setDraftInput, setTasks, switchCompany }}
+      value={{ company, messages, canvasText, draftInput, tasks, sessionKey, setMessages, setCanvasText, setDraftInput, setTasks, switchCompany, viewAsStaff, setViewAsStaff }}
     >
       {children}
     </Ctx.Provider>
