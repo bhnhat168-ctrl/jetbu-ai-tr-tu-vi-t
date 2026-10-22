@@ -103,3 +103,22 @@
     font-family: var(--font-display);
   }
 }
+
+/* ===== JETBU Rebirth 2026: markdown nhẹ (không cần plugin typography) ===== */
+.jetbu-md { line-height: 1.6; overflow-wrap: anywhere; }
+.jetbu-md h1 { font-size: 1.35rem; font-weight: 700; margin: 1rem 0 .5rem; }
+.jetbu-md h2 { font-size: 1.15rem; font-weight: 700; margin: .9rem 0 .4rem; }
+.jetbu-md h3 { font-size: 1.02rem; font-weight: 600; margin: .8rem 0 .3rem; }
+.jetbu-md p { margin: .45rem 0; }
+.jetbu-md ul, .jetbu-md ol { margin: .4rem 0 .4rem 1.25rem; }
+.jetbu-md ul { list-style: disc; } .jetbu-md ol { list-style: decimal; }
+.jetbu-md li { margin: .15rem 0; }
+.jetbu-md blockquote { border-left: 3px solid var(--color-primary); padding-left: .75rem; color: var(--color-muted-foreground); margin: .5rem 0; }
+.jetbu-md code { background: var(--color-secondary); padding: .1rem .3rem; border-radius: .3rem; font-size: .9em; }
+.jetbu-md pre { background: var(--color-secondary); padding: .75rem; border-radius: .75rem; overflow-x: auto; margin: .5rem 0; }
+.jetbu-md pre code { background: none; padding: 0; }
+.jetbu-md table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: .92em; margin: .5rem 0; }
+.jetbu-md th, .jetbu-md td { border: 1px solid var(--color-border); padding: .35rem .5rem; text-align: left; vertical-align: top; }
+.jetbu-md th { background: var(--color-secondary); font-weight: 600; }
+.jetbu-md a { color: var(--color-primary); text-decoration: underline; }
+.jetbu-md hr { border: 0; border-top: 1px solid var(--color-border); margin: .75rem 0; }

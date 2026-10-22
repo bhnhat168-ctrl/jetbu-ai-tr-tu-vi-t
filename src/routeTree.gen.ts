@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChienLuocRouteImport } from './routes/chien-luoc'
 import { Route as DiDongRouteImport } from './routes/di-dong'
+import { Route as KhongGianAiRouteImport } from './routes/khong-gian-ai'
 import { Route as PhapLyRouteImport } from './routes/phap-ly'
 import { Route as QuanTriRouteImport } from './routes/quan-tri'
 import { Route as TriThucRouteImport } from './routes/tri-thuc'
 import { Route as ApiArenaRouteImport } from './routes/api/arena'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiJetbuAiBrainRouteImport } from './routes/api/jetbu-ai-brain'
+import { Route as ApiJetbuCoreEngineRouteImport } from './routes/api/jetbu-core-engine'
 import { Route as ApiKnowledgeSearchRouteImport } from './routes/api/knowledge-search'
 import { Route as ApiLegalRouteImport } from './routes/api/legal'
 import { Route as ApiOcrRouteImport } from './routes/api/ocr'
@@ -35,6 +37,11 @@ const ChienLuocRoute = ChienLuocRouteImport.update({
 const DiDongRoute = DiDongRouteImport.update({
   id: '/di-dong',
   path: '/di-dong',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KhongGianAiRoute = KhongGianAiRouteImport.update({
+  id: '/khong-gian-ai',
+  path: '/khong-gian-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PhapLyRoute = PhapLyRouteImport.update({
@@ -67,6 +74,11 @@ const ApiJetbuAiBrainRoute = ApiJetbuAiBrainRouteImport.update({
   path: '/api/jetbu-ai-brain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiJetbuCoreEngineRoute = ApiJetbuCoreEngineRouteImport.update({
+  id: '/api/jetbu-core-engine',
+  path: '/api/jetbu-core-engine',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiKnowledgeSearchRoute = ApiKnowledgeSearchRouteImport.update({
   id: '/api/knowledge-search',
   path: '/api/knowledge-search',
@@ -87,12 +99,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
   '/di-dong': typeof DiDongRoute
+  '/khong-gian-ai': typeof KhongGianAiRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
   '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
+  '/api/jetbu-core-engine': typeof ApiJetbuCoreEngineRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -101,12 +115,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
   '/di-dong': typeof DiDongRoute
+  '/khong-gian-ai': typeof KhongGianAiRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
   '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
+  '/api/jetbu-core-engine': typeof ApiJetbuCoreEngineRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -116,12 +132,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/chien-luoc': typeof ChienLuocRoute
   '/di-dong': typeof DiDongRoute
+  '/khong-gian-ai': typeof KhongGianAiRoute
   '/phap-ly': typeof PhapLyRoute
   '/quan-tri': typeof QuanTriRoute
   '/tri-thuc': typeof TriThucRoute
   '/api/arena': typeof ApiArenaRoute
   '/api/chat': typeof ApiChatRoute
   '/api/jetbu-ai-brain': typeof ApiJetbuAiBrainRoute
+  '/api/jetbu-core-engine': typeof ApiJetbuCoreEngineRoute
   '/api/knowledge-search': typeof ApiKnowledgeSearchRoute
   '/api/legal': typeof ApiLegalRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -132,12 +150,14 @@ export interface FileRouteTypes {
     | '/'
     | '/chien-luoc'
     | '/di-dong'
+    | '/khong-gian-ai'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
     | '/api/jetbu-ai-brain'
+    | '/api/jetbu-core-engine'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -146,12 +166,14 @@ export interface FileRouteTypes {
     | '/'
     | '/chien-luoc'
     | '/di-dong'
+    | '/khong-gian-ai'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
     | '/api/jetbu-ai-brain'
+    | '/api/jetbu-core-engine'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -160,12 +182,14 @@ export interface FileRouteTypes {
     | '/'
     | '/chien-luoc'
     | '/di-dong'
+    | '/khong-gian-ai'
     | '/phap-ly'
     | '/quan-tri'
     | '/tri-thuc'
     | '/api/arena'
     | '/api/chat'
     | '/api/jetbu-ai-brain'
+    | '/api/jetbu-core-engine'
     | '/api/knowledge-search'
     | '/api/legal'
     | '/api/ocr'
@@ -175,12 +199,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChienLuocRoute: typeof ChienLuocRoute
   DiDongRoute: typeof DiDongRoute
+  KhongGianAiRoute: typeof KhongGianAiRoute
   PhapLyRoute: typeof PhapLyRoute
   QuanTriRoute: typeof QuanTriRoute
   TriThucRoute: typeof TriThucRoute
   ApiArenaRoute: typeof ApiArenaRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiJetbuAiBrainRoute: typeof ApiJetbuAiBrainRoute
+  ApiJetbuCoreEngineRoute: typeof ApiJetbuCoreEngineRoute
   ApiKnowledgeSearchRoute: typeof ApiKnowledgeSearchRoute
   ApiLegalRoute: typeof ApiLegalRoute
   ApiOcrRoute: typeof ApiOcrRoute
@@ -207,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/di-dong'
       fullPath: '/di-dong'
       preLoaderRoute: typeof DiDongRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/khong-gian-ai': {
+      id: '/khong-gian-ai'
+      path: '/khong-gian-ai'
+      fullPath: '/khong-gian-ai'
+      preLoaderRoute: typeof KhongGianAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/phap-ly': {
@@ -251,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiJetbuAiBrainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/jetbu-core-engine': {
+      id: '/api/jetbu-core-engine'
+      path: '/api/jetbu-core-engine'
+      fullPath: '/api/jetbu-core-engine'
+      preLoaderRoute: typeof ApiJetbuCoreEngineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/knowledge-search': {
       id: '/api/knowledge-search'
       path: '/api/knowledge-search'
@@ -279,12 +319,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChienLuocRoute: ChienLuocRoute,
   DiDongRoute: DiDongRoute,
+  KhongGianAiRoute: KhongGianAiRoute,
   PhapLyRoute: PhapLyRoute,
   QuanTriRoute: QuanTriRoute,
   TriThucRoute: TriThucRoute,
   ApiArenaRoute: ApiArenaRoute,
   ApiChatRoute: ApiChatRoute,
   ApiJetbuAiBrainRoute: ApiJetbuAiBrainRoute,
+  ApiJetbuCoreEngineRoute: ApiJetbuCoreEngineRoute,
   ApiKnowledgeSearchRoute: ApiKnowledgeSearchRoute,
   ApiLegalRoute: ApiLegalRoute,
   ApiOcrRoute: ApiOcrRoute,
