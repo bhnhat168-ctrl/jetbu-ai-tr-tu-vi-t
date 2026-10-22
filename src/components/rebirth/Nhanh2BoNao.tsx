@@ -16,6 +16,7 @@ import {
   RotateCw,
 } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-store";
+import { jdb } from "@/lib/jetbu-client";
 import {
   CATEGORIES,
   categoryLabel,
@@ -128,7 +129,7 @@ function NapTriThuc() {
   const save = async (t: string, md: string, extra: Record<string, unknown> = {}) => {
     setBusy(true);
     try {
-      const r = await core<{ file_name: string; duplicate: boolean }>("save_md", {
+      const r = await core<{ id: string; file_name: string; duplicate: boolean }>("save_md", {
         company: company?.code,
         category: cat,
         title: t,
@@ -138,6 +139,19 @@ function NapTriThuc() {
       toast[r.duplicate ? "warning" : "success"](
         r.duplicate ? `Đã có sẵn trong Kho: ${r.file_name}` : `Đã nén & lưu: ${r.file_name}`,
       );
+      try {
+        const [{ count }, { data: tg }] = await Promise.all([
+          jdb
+            .from("knowledge_md_chunks")
+            .select("id", { count: "exact", head: true })
+            .eq("doc_id", r.id),
+          jdb.from("knowledge_md_store").select("tags").eq("id", r.id).maybeSingle(),
+        ]);
+        const tags = ((tg as { tags?: string[] } | null)?.tags ?? []).filter((x) => x !== cat);
+        toast.info(`Đã băm ${count ?? 0} đoạn, ${tags.length} từ khóa`);
+      } catch {
+        /* thống kê là phụ */
+      }
       setTitle("");
       setText("");
       setLink("");
@@ -319,7 +333,15 @@ export function DocRow({ d }: { d: MdDoc }) {
             <code>{d.file_name}</code> · {d.word_count} từ ·{" "}
             {new Date(d.created_at).toLocaleDateString("vi-VN")}
             {d.verified_by?.length ? ` · ✓ ${d.verified_by.join(", ")}` : ""}
+            {d.chunks !== undefined ? ` · ${d.chunks} đoạn` : ""}
           </p>
+          {!!d.tags?.length && (
+            <span className="mt-1 flex flex-wrap gap-1">
+              {d.tags.slice(0, 9).map((t) => (
+                <Tag key={t}>{t}</Tag>
+              ))}
+            </span>
+          )}
         </button>
         <button
           type="button"
@@ -369,12 +391,18 @@ function NeuralGraph3D() {
   const approveProposal = useJetbuStore((s) => s.approveProposal);
   const setPendingTopic = useJetbuStore((s) => s.setPendingTopic);
   const setBranch = useJetbuStore((s) => s.setBranch);
+  const setPendingDocIds = useJetbuStore((s) => s.setPendingDocIds);
+  const [allCo, setAllCo] = useState(false);
   const { data: docs = [] } = useQuery({
-    queryKey: ["md-graph", company?.code],
-    queryFn: () => listMd({ ...(company ? { company: company.code } : {}), limit: 120 }),
+    queryKey: ["md-graph", company?.code, allCo],
+    queryFn: async () => {
+      if (allCo || !company) return listMd({ limit: 400 });
+      const own = await listMd({ company: company.code, limit: 400 });
+      return own.length ? own : listMd({ limit: 400 });
+    },
   });
 
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, size } = useMemo(() => {
     const nodes: Node3[] = docs.map((d, i) => {
       const phi = Math.acos(1 - (2 * (i + 0.5)) / Math.max(1, docs.length)),
         th = Math.PI * (1 + Math.sqrt(5)) * i; // phân bố Fibonacci trên cầu
@@ -390,22 +418,25 @@ function NeuralGraph3D() {
     });
     const edges: [number, number][] = [];
     const tok = (d: MdDoc) =>
-      new Set([
-        ...(d.tags ?? []),
-        ...d.title
+      new Set(
+        d.title
           .toLowerCase()
           .split(/[^\p{L}\p{N}]+/u)
           .filter((w) => w.length > 3),
-      ]);
+      );
     const sets = docs.map(tok);
+    const tagSets = docs.map((d) => new Set((d.tags ?? []).filter((t) => t !== d.category)));
     for (let i = 0; i < nodes.length; i++)
       for (let j = i + 1; j < nodes.length; j++) {
-        let shared = 0;
-        for (const w of sets[i]!) if (sets[j]!.has(w)) shared++;
-        if (shared >= 2 || (docs[i]!.category === docs[j]!.category && shared >= 1))
-          edges.push([i, j]);
+        let tagShared = false;
+        for (const t of tagSets[i]!) if (tagSets[j]!.has(t)) tagShared = true;
+        let titleShared = 0;
+        for (const w of sets[i]!) if (sets[j]!.has(w)) titleShared++;
+        if (tagShared || titleShared >= 2) edges.push([i, j]);
       }
-    return { nodes, edges };
+    const maxW = Math.max(1, ...docs.map((d) => d.word_count || 0));
+    const size = docs.map((d) => 0.6 + 1.4 * Math.sqrt((d.word_count || 0) / maxW));
+    return { nodes, edges, size };
   }, [docs]);
 
   useEffect(() => {
@@ -461,7 +492,7 @@ function NeuralGraph3D() {
         const n = nodes[i]!,
           p = P[i]!;
         proj.set(n.id, p);
-        const r = 4 + 5 * p.s;
+        const r = (4 + 5 * p.s) * (size[i] ?? 1);
         ctx.fillStyle = CAT_COLOR[n.cat] ?? "#9ca3af";
         ctx.globalAlpha = 0.55 + 0.45 * ((p.z + 1) / 2);
         ctx.beginPath();
@@ -522,7 +553,7 @@ function NeuralGraph3D() {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
-  }, [nodes, edges]);
+  }, [nodes, edges, size]);
 
   const propose = async () => {
     setBusy(true);
@@ -538,8 +569,23 @@ function NeuralGraph3D() {
       setBusy(false);
     }
   };
+  const linked = useMemo(() => {
+    if (!selected) return [] as MdDoc[];
+    const i = docs.findIndex((d) => d.id === selected.id);
+    return edges.flatMap(([a, b]) => (a === i ? [docs[b]!] : b === i ? [docs[a]!] : []));
+  }, [selected, docs, edges]);
+  const sendToCouncil = () => {
+    if (!selected) return;
+    setPendingDocIds([selected.id, ...linked.map((d) => d.id)]);
+    setPendingTopic(selected.title);
+    setBranch("n3");
+    toast.success("Đã đưa sách và các liên kết sang Hội đồng Lục Đạo.");
+  };
   const approve = (p: Proposal) => {
     approveProposal(p.title);
+    setPendingDocIds(
+      docs.filter((d) => p.linked_files?.includes(d.file_name)).map((d) => d.id),
+    );
     setPendingTopic(`${p.title}\n\n${p.topic}`);
     setBranch("n3");
     toast.success("Đã duyệt — chuyển sang Nhánh 3 để Hội đồng sáng tác.");
@@ -552,9 +598,20 @@ function NeuralGraph3D() {
           title="Mô hình Đồ thị Thần kinh 3D"
           icon={<Brain className="h-5 w-5 text-primary" />}
           right={
-            <Tag>
-              {docs.length} tri thức · {edges.length} liên kết
-            </Tag>
+            <span className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5"
+                  checked={allCo}
+                  onChange={(e) => setAllCo(e.target.checked)}
+                />
+                Tất cả công ty
+              </label>
+              <Tag>
+                {docs.length} sách · {edges.length} liên kết
+              </Tag>
+            </span>
           }
         >
           <canvas
@@ -584,6 +641,29 @@ function NeuralGraph3D() {
               <div className="mt-2 max-h-56 overflow-y-auto">
                 <Md>{selected.content_md.slice(0, 6000)}</Md>
               </div>
+              <p className="mt-3 text-sm font-semibold">Liên kết ({linked.length})</p>
+              <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto">
+                {linked.map((d) => (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      className="min-h-11 w-full rounded-lg bg-secondary px-3 py-2 text-left text-sm"
+                      onClick={() => setSelected(d)}
+                    >
+                      {d.title}
+                      <span className="block text-xs text-muted-foreground">
+                        {categoryLabel(d.category)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {!linked.length && (
+                  <li className="text-xs text-muted-foreground">Chưa có liên kết.</li>
+                )}
+              </ul>
+              <button type="button" className={`${btnPrimary} mt-3 w-full`} onClick={sendToCouncil}>
+                📚 Đưa sách này + liên kết vào Hội đồng
+              </button>
             </div>
           )}
         </Section>
