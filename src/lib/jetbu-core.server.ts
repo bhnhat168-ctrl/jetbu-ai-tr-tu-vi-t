@@ -1199,6 +1199,10 @@ export async function councilBook(o: {
     else srcMap.set(h.file_name, { file_name: h.file_name, title: h.title, chunks: h.chunks ?? 0 });
   }
   const sources_internal = [...srcMap.values()];
+  prog({
+    step: "Tầng 1: đã tra Kho",
+    detail: `${sources_internal.reduce((n, s) => n + s.chunks, 0)} đoạn từ ${sources_internal.length} sách`,
+  });
   prog({ step: "Tầng 2+3: nguồn mở & kiểm chứng chéo" });
   const { hits } = await tier2Search(o.topic, suggestSources(o.topic), 4);
   const ver = await tier3Verify(o.topic, hits, pool);

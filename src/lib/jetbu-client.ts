@@ -141,7 +141,7 @@ export async function listMd(
   let q = jdb
     .from("knowledge_md_store")
     .select(
-      "id,category,title,file_name,content_md,source_type,source_url,source_name,tags,word_count,verified_by,created_at",
+      "id,category,title,file_name,content_md,source_type,source_url,source_name,tags,word_count,verified_by,created_at,knowledge_md_chunks(count)",
     )
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -151,7 +151,9 @@ export async function listMd(
   if (opts.q?.trim()) q = q.ilike("title", `%${opts.q.trim()}%`);
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return (data ?? []) as MdDoc[];
+  return ((data ?? []) as (MdDoc & { knowledge_md_chunks?: { count: number }[] })[]).map(
+    ({ knowledge_md_chunks: kc, ...d }) => ({ ...d, chunks: kc?.[0]?.count ?? 0 }),
+  );
 }
 
 export type KhoTitle = {
