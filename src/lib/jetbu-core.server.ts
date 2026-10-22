@@ -44,6 +44,7 @@ export type InternalHit = {
   source_url: string | null;
   source_name: string | null;
   score: number;
+  chunks?: number | undefined;
 };
 export type Citation = {
   kind: "internal" | "external";
@@ -432,6 +433,18 @@ export async function embed(text: string): Promise<number[] | null> {
   }
 }
 
+type ChunkRow = {
+  chunk_id: string;
+  doc_id: string;
+  title: string;
+  file_name: string;
+  category: string;
+  heading: string | null;
+  content: string;
+  score: number;
+};
+
+/** Tầng 1: tìm theo đoạn (knowledge_md_chunks), gom theo tài liệu. */
 export async function tier1Search(
   q: string,
   company = COMPANY_DEFAULT,
@@ -446,18 +459,112 @@ export async function tier1Search(
     return [];
   }
   const vec = await embed(q);
-  const { data, error } = await sb.rpc("search_knowledge_md", {
+  const { data, error } = await sb.rpc("search_knowledge_chunks", {
     q,
     p_company: company,
     p_category: category ?? null,
-    p_limit: limit,
+    p_limit: Math.min(limit * 3, 60),
     query_embedding: vec,
   });
   if (error) {
     console.warn("[core] tier1", error.message);
     return [];
   }
-  return (data ?? []) as InternalHit[];
+  const groups = new Map<string, { hit: InternalHit; parts: string[] }>();
+  for (const r of (data ?? []) as ChunkRow[]) {
+    const g = groups.get(r.doc_id);
+    const part = r.heading ? `## ${r.heading}\n${r.content}` : r.content;
+    if (g) {
+      g.hit.score += Number(r.score) || 0;
+      g.hit.chunks = (g.hit.chunks ?? 0) + 1;
+      g.parts.push(part);
+    } else {
+      groups.set(r.doc_id, {
+        hit: {
+          id: r.doc_id,
+          category: r.category,
+          title: r.title,
+          file_name: r.file_name,
+          snippet: clip(r.content, 300),
+          content_md: "",
+          source_url: null,
+          source_name: null,
+          score: Number(r.score) || 0,
+          chunks: 1,
+        },
+        parts: [part],
+      });
+    }
+  }
+  return [...groups.values()]
+    .map((g) => ({ ...g.hit, content_md: clip(g.parts.join("\n…\n"), 6000) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+export type KhoTitle = {
+  id: string;
+  title: string;
+  file_name: string;
+  category: string;
+  word_count: number | null;
+  tags: string[];
+};
+export async function listKhoTitles(company = COMPANY_DEFAULT): Promise<KhoTitle[]> {
+  const sb = await admin();
+  const { data, error } = await sb.rpc("knowledge_md_titles", { p_company: company });
+  if (error) throw new Error(`Không đọc được danh mục Kho: ${error.message}`);
+  return (data ?? []) as KhoTitle[];
+}
+
+/** Lấy 10 đoạn đầu + các đoạn khớp đề tài của sách Admin chọn (≤8000 ký tự/sách). */
+async function pickedDocsEvidence(docIds: string[], topic: string) {
+  const sb = await admin();
+  const words = new Set(
+    topic
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 3),
+  );
+  const out: { file_name: string; title: string; chunks: number; text: string }[] = [];
+  for (const id of docIds.slice(0, 10)) {
+    const { data: doc } = await sb
+      .from("knowledge_md_store")
+      .select("title,file_name")
+      .eq("id", id)
+      .maybeSingle();
+    if (!doc) continue;
+    const { data: rows } = await sb
+      .from("knowledge_md_chunks")
+      .select("chunk_index,heading,content")
+      .eq("doc_id", id)
+      .order("chunk_index")
+      .limit(400);
+    const list = (rows ?? []) as { chunk_index: number; heading: string | null; content: string }[];
+    const picked = list.filter((c, i) => {
+      if (i < 10) return true;
+      const n = c.content
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      for (const w of words) if (n.includes(w)) return true;
+      return false;
+    });
+    const d = doc as { title: string; file_name: string };
+    out.push({
+      file_name: d.file_name,
+      title: d.title,
+      chunks: picked.length,
+      text: clip(
+        picked.map((c) => (c.heading ? `## ${c.heading}\n${c.content}` : c.content)).join("\n…\n"),
+        8000,
+      ),
+    });
+  }
+  return out;
 }
 
 /** Lưu 1 file .md vào Kho (chống trùng theo source_url; trùng → trả về bản đã có). */
@@ -932,11 +1039,11 @@ export async function truthAnswer(o: {
 }): Promise<TruthAnswer> {
   const company = o.company ?? COMPANY_DEFAULT;
   const pool = await loadGateways();
-  const internal = await tier1Search(o.question, company, o.category, 8);
+  const internal = await tier1Search(o.question, company, o.category, 16);
   const ctx = internal
     .map(
       (h, i) =>
-        `[NỘI BỘ ${i + 1}] file: ${h.file_name} | thư mục: ${h.category} | tiêu đề: ${h.title}\n${clip(h.content_md, 2500)}`,
+        `[NỘI BỘ ${i + 1}] file: ${h.file_name} | thư mục: ${h.category} | tiêu đề: ${h.title}\n${clip(h.content_md, 3000)}`,
     )
     .join("\n\n---\n\n");
   const persona = o.persona ?? "Bạn là JETBU AI — bộ não thứ 2 của Admin.";
@@ -1063,6 +1170,7 @@ export async function councilBook(o: {
   enterprises?: string[] | undefined;
   cycle?: number | undefined;
   onProgress?: ((p: CouncilProgress) => void) | undefined;
+  doc_ids?: string[] | undefined;
 }) {
   const company = o.company ?? COMPANY_DEFAULT;
   const ents = o.enterprises?.length ? o.enterprises : [...ENTERPRISES];
@@ -1071,17 +1179,33 @@ export async function councilBook(o: {
   const prog = o.onProgress ?? (() => {});
 
   prog({ step: "Tầng 1: tra Kho Tri Thức nội bộ" });
-  const internal = await tier1Search(o.topic, company, undefined, 10);
+  const picked = o.doc_ids?.length ? await pickedDocsEvidence(o.doc_ids, o.topic) : [];
+  const internal = await tier1Search(o.topic, company, undefined, 24);
+  const titles = await listKhoTitles(company).catch(() => [] as KhoTitle[]);
+  const pickedTxt = picked.map((p) => `[file: ${p.file_name}] ${p.title}\n${p.text}`).join("\n\n");
   const ctx = internal
-    .map((h) => `[file: ${h.file_name}] ${h.title}\n${clip(h.content_md, 1800)}`)
+    .map((h) => `[file: ${h.file_name}] ${h.title}\n${clip(h.content_md, 2500)}`)
     .join("\n\n");
+  const catalog = titles
+    .slice(0, 150)
+    .map((t) => `- ${t.title} [file: ${t.file_name}]`)
+    .join("\n");
+  const srcMap = new Map<string, { file_name: string; title: string; chunks: number }>();
+  for (const p of picked)
+    srcMap.set(p.file_name, { file_name: p.file_name, title: p.title, chunks: p.chunks });
+  for (const h of internal) {
+    const ex = srcMap.get(h.file_name);
+    if (ex) ex.chunks += h.chunks ?? 0;
+    else srcMap.set(h.file_name, { file_name: h.file_name, title: h.title, chunks: h.chunks ?? 0 });
+  }
+  const sources_internal = [...srcMap.values()];
   prog({ step: "Tầng 2+3: nguồn mở & kiểm chứng chéo" });
   const { hits } = await tier2Search(o.topic, suggestSources(o.topic), 4);
   const ver = await tier3Verify(o.topic, hits, pool);
   const ext = ver.verified
     .map((h) => `[nguồn: ${h.citation} — ${h.url}] ${clip(h.excerpt, 900)}`)
     .join("\n\n");
-  const evidence = `BẰNG CHỨNG NỘI BỘ:\n${ctx || "(trống)"}\n\nBẰNG CHỨNG NGOÀI ĐÃ KIỂM CHỨNG:\n${ext || "(không có)"}`;
+  const evidence = `${pickedTxt ? `BẰNG CHỨNG BẮT BUỘC (sách Admin chọn):\n${pickedTxt}\n\n` : ""}BẰNG CHỨNG NỘI BỘ:\n${ctx || "(trống)"}\n\nDANH MỤC KHO:\n${catalog || "(trống)"}\n\nBẰNG CHỨNG NGOÀI ĐÃ KIỂM CHỨNG:\n${ext || "(không có)"}\n\nQUY TẮC TRÍCH DẪN: mọi luận điểm lấy từ Kho phải ghi [file: tên_file].`;
 
   // VÒNG 1 — mỗi AI một vai chuyên gia, phân tích xoay quanh 6 cõi
   prog({
@@ -1176,6 +1300,7 @@ CHỈ xuất JSON: {"title_vi":"...","content_md":"sách markdown đầy đủ �
         round2: critiques,
         synthesizer: synth.gateway.name,
         external_verified_by: ver.verified_by,
+        sources_internal,
         next_cycle_questions: book?.next_cycle_questions ?? [],
       },
       ai_participants: [
@@ -1196,6 +1321,7 @@ CHỈ xuất JSON: {"title_vi":"...","content_md":"sách markdown đầy đủ �
     title_vi,
     content_md,
     participants: analyses.map((a) => a.ai),
+    sources_internal,
     synthesizer: synth.gateway.name,
     critiques,
     next_cycle_questions: book?.next_cycle_questions ?? [],
