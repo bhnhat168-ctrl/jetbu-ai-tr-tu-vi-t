@@ -48,6 +48,7 @@ export type MdDoc = {
   word_count: number;
   verified_by: string[];
   created_at: string;
+  chunks?: number | undefined;
 };
 
 /** Gọi JETBU Core Engine. Trả JSON; ném Error với thông điệp tiếng Việt. */
@@ -151,6 +152,20 @@ export async function listMd(
   const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data ?? []) as MdDoc[];
+}
+
+export type KhoTitle = {
+  id: string;
+  title: string;
+  file_name: string;
+  category: string;
+  word_count: number | null;
+  tags: string[];
+};
+/** Danh mục tài liệu Kho (tối đa 300, mới nhất trước). */
+export async function khoTitles(company?: string): Promise<KhoTitle[]> {
+  const r = await core<{ titles: KhoTitle[] }>("kho_titles", company ? { company } : {});
+  return r.titles ?? [];
 }
 
 export async function mdStats(

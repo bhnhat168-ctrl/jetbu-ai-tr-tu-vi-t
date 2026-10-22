@@ -86,6 +86,17 @@ export const Route = createFileRoute("/api/jetbu-core-engine")({
                       enterprises: Array.isArray(b["enterprises"]) ? b["enterprises"] : undefined,
                       cycle: Number(b["cycle"] ?? 1),
                       onProgress: (p) => send({ progress: p }),
+                      doc_ids: Array.isArray(b["doc_ids"])
+                        ? (b["doc_ids"] as unknown[])
+                            .filter(
+                              (x): x is string =>
+                                typeof x === "string" &&
+                                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                                  x,
+                                ),
+                            )
+                            .slice(0, 10)
+                        : undefined,
                     });
                     send({ result: r });
                   } catch (e) {
@@ -156,6 +167,8 @@ export const Route = createFileRoute("/api/jetbu-core-engine")({
                 }),
               );
             }
+            case "kho_titles":
+              return Response.json({ titles: await core.listKhoTitles(company) });
             case "propose_works":
               return Response.json(await core.proposeWorks(company));
             /* ---------- Nhánh 4 ---------- */

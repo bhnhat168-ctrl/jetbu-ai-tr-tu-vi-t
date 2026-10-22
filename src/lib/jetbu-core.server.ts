@@ -1191,7 +1191,8 @@ export async function councilBook(o: {
     .map((t) => `- ${t.title} [file: ${t.file_name}]`)
     .join("\n");
   const srcMap = new Map<string, { file_name: string; title: string; chunks: number }>();
-  for (const p of picked) srcMap.set(p.file_name, { file_name: p.file_name, title: p.title, chunks: p.chunks });
+  for (const p of picked)
+    srcMap.set(p.file_name, { file_name: p.file_name, title: p.title, chunks: p.chunks });
   for (const h of internal) {
     const ex = srcMap.get(h.file_name);
     if (ex) ex.chunks += h.chunks ?? 0;
@@ -1299,6 +1300,7 @@ CHỈ xuất JSON: {"title_vi":"...","content_md":"sách markdown đầy đủ �
         round2: critiques,
         synthesizer: synth.gateway.name,
         external_verified_by: ver.verified_by,
+        sources_internal,
         next_cycle_questions: book?.next_cycle_questions ?? [],
       },
       ai_participants: [
@@ -1319,6 +1321,7 @@ CHỈ xuất JSON: {"title_vi":"...","content_md":"sách markdown đầy đủ �
     title_vi,
     content_md,
     participants: analyses.map((a) => a.ai),
+    sources_internal,
     synthesizer: synth.gateway.name,
     critiques,
     next_cycle_questions: book?.next_cycle_questions ?? [],
