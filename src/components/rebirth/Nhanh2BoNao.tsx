@@ -16,7 +16,6 @@ import {
   RotateCw,
 } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-store";
-import { jdb } from "@/lib/jetbu-client";
 import {
   CATEGORIES,
   categoryLabel,
@@ -27,6 +26,7 @@ import {
   mdFileName,
   uploadAudio,
   esm,
+  jdb,
   type Loose,
   type MdDoc,
 } from "@/lib/jetbu-client";
@@ -583,9 +583,7 @@ function NeuralGraph3D() {
   };
   const approve = (p: Proposal) => {
     approveProposal(p.title);
-    setPendingDocIds(
-      docs.filter((d) => p.linked_files?.includes(d.file_name)).map((d) => d.id),
-    );
+    setPendingDocIds(docs.filter((d) => p.linked_files?.includes(d.file_name)).map((d) => d.id));
     setPendingTopic(`${p.title}\n\n${p.topic}`);
     setBranch("n3");
     toast.success("Đã duyệt — chuyển sang Nhánh 3 để Hội đồng sáng tác.");

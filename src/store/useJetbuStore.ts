@@ -126,7 +126,8 @@ export const useJetbuStore = create<State>()(
           proposals: s.proposals.map((p) => (p.title === title ? { ...p, approved: true } : p)),
         })),
       setPendingTopic: (pendingTopic) => set({ pendingTopic }),
-      setPendingDocIds: (pendingDocIds) => set({ pendingDocIds: [...new Set(pendingDocIds)].slice(0, 10) }),
+      setPendingDocIds: (pendingDocIds) =>
+        set({ pendingDocIds: [...new Set(pendingDocIds)].slice(0, 10) }),
       pushNotebook: (n) => set((s) => ({ notebook: [n, ...s.notebook].slice(0, 100) })),
       markNotebookSaved: (id) =>
         set((s) => ({
