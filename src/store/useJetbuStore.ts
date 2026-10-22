@@ -73,6 +73,8 @@ type State = {
   approveProposal: (title: string) => void;
   pendingTopic: string | null; // Bộ não 3D [Duyệt] → Nhánh 3
   setPendingTopic: (t: string | null) => void;
+  pendingDocIds: string[]; // sách Kho đi kèm đề tài → Hội đồng
+  setPendingDocIds: (ids: string[]) => void;
   notebook: NotebookItem[];
   pushNotebook: (n: NotebookItem) => void;
   markNotebookSaved: (id: string) => void;
@@ -99,6 +101,7 @@ const initial = {
   acceptedSources: {} as Record<string, string>,
   proposals: [] as Proposal[],
   pendingTopic: null as string | null,
+  pendingDocIds: [] as string[],
   notebook: [] as NotebookItem[],
   lastNewsAt: null as string | null,
 };
@@ -123,6 +126,8 @@ export const useJetbuStore = create<State>()(
           proposals: s.proposals.map((p) => (p.title === title ? { ...p, approved: true } : p)),
         })),
       setPendingTopic: (pendingTopic) => set({ pendingTopic }),
+      setPendingDocIds: (pendingDocIds) =>
+        set({ pendingDocIds: [...new Set(pendingDocIds)].slice(0, 10) }),
       pushNotebook: (n) => set((s) => ({ notebook: [n, ...s.notebook].slice(0, 100) })),
       markNotebookSaved: (id) =>
         set((s) => ({
@@ -147,6 +152,7 @@ export const useJetbuStore = create<State>()(
         acceptedSources: s.acceptedSources,
         proposals: s.proposals,
         pendingTopic: s.pendingTopic,
+        pendingDocIds: s.pendingDocIds,
         notebook: s.notebook,
         lastNewsAt: s.lastNewsAt,
       }),
