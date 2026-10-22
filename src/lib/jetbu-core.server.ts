@@ -44,6 +44,7 @@ export type InternalHit = {
   source_url: string | null;
   source_name: string | null;
   score: number;
+  chunks?: number | undefined;
 };
 export type Citation = {
   kind: "internal" | "external";
@@ -432,6 +433,18 @@ export async function embed(text: string): Promise<number[] | null> {
   }
 }
 
+type ChunkRow = {
+  chunk_id: string;
+  doc_id: string;
+  title: string;
+  file_name: string;
+  category: string;
+  heading: string | null;
+  content: string;
+  score: number;
+};
+
+/** Tầng 1: tìm theo đoạn (knowledge_md_chunks), gom theo tài liệu. */
 export async function tier1Search(
   q: string,
   company = COMPANY_DEFAULT,
@@ -446,18 +459,112 @@ export async function tier1Search(
     return [];
   }
   const vec = await embed(q);
-  const { data, error } = await sb.rpc("search_knowledge_md", {
+  const { data, error } = await sb.rpc("search_knowledge_chunks", {
     q,
     p_company: company,
     p_category: category ?? null,
-    p_limit: limit,
+    p_limit: Math.min(limit * 3, 60),
     query_embedding: vec,
   });
   if (error) {
     console.warn("[core] tier1", error.message);
     return [];
   }
-  return (data ?? []) as InternalHit[];
+  const groups = new Map<string, { hit: InternalHit; parts: string[] }>();
+  for (const r of (data ?? []) as ChunkRow[]) {
+    const g = groups.get(r.doc_id);
+    const part = r.heading ? `## ${r.heading}\n${r.content}` : r.content;
+    if (g) {
+      g.hit.score += Number(r.score) || 0;
+      g.hit.chunks = (g.hit.chunks ?? 0) + 1;
+      g.parts.push(part);
+    } else {
+      groups.set(r.doc_id, {
+        hit: {
+          id: r.doc_id,
+          category: r.category,
+          title: r.title,
+          file_name: r.file_name,
+          snippet: clip(r.content, 300),
+          content_md: "",
+          source_url: null,
+          source_name: null,
+          score: Number(r.score) || 0,
+          chunks: 1,
+        },
+        parts: [part],
+      });
+    }
+  }
+  return [...groups.values()]
+    .map((g) => ({ ...g.hit, content_md: clip(g.parts.join("\n…\n"), 6000) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+export type KhoTitle = {
+  id: string;
+  title: string;
+  file_name: string;
+  category: string;
+  word_count: number | null;
+  tags: string[];
+};
+export async function listKhoTitles(company = COMPANY_DEFAULT): Promise<KhoTitle[]> {
+  const sb = await admin();
+  const { data, error } = await sb.rpc("knowledge_md_titles", { p_company: company });
+  if (error) throw new Error(`Không đọc được danh mục Kho: ${error.message}`);
+  return (data ?? []) as KhoTitle[];
+}
+
+/** Lấy 10 đoạn đầu + các đoạn khớp đề tài của sách Admin chọn (≤8000 ký tự/sách). */
+async function pickedDocsEvidence(docIds: string[], topic: string) {
+  const sb = await admin();
+  const words = new Set(
+    topic
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 3),
+  );
+  const out: { file_name: string; title: string; chunks: number; text: string }[] = [];
+  for (const id of docIds.slice(0, 10)) {
+    const { data: doc } = await sb
+      .from("knowledge_md_store")
+      .select("title,file_name")
+      .eq("id", id)
+      .maybeSingle();
+    if (!doc) continue;
+    const { data: rows } = await sb
+      .from("knowledge_md_chunks")
+      .select("chunk_index,heading,content")
+      .eq("doc_id", id)
+      .order("chunk_index")
+      .limit(400);
+    const list = (rows ?? []) as { chunk_index: number; heading: string | null; content: string }[];
+    const picked = list.filter((c, i) => {
+      if (i < 10) return true;
+      const n = c.content
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      for (const w of words) if (n.includes(w)) return true;
+      return false;
+    });
+    const d = doc as { title: string; file_name: string };
+    out.push({
+      file_name: d.file_name,
+      title: d.title,
+      chunks: picked.length,
+      text: clip(
+        picked.map((c) => (c.heading ? `## ${c.heading}\n${c.content}` : c.content)).join("\n…\n"),
+        8000,
+      ),
+    });
+  }
+  return out;
 }
 
 /** Lưu 1 file .md vào Kho (chống trùng theo source_url; trùng → trả về bản đã có). */
