@@ -1039,11 +1039,11 @@ export async function truthAnswer(o: {
 }): Promise<TruthAnswer> {
   const company = o.company ?? COMPANY_DEFAULT;
   const pool = await loadGateways();
-  const internal = await tier1Search(o.question, company, o.category, 8);
+  const internal = await tier1Search(o.question, company, o.category, 16);
   const ctx = internal
     .map(
       (h, i) =>
-        `[NỘI BỘ ${i + 1}] file: ${h.file_name} | thư mục: ${h.category} | tiêu đề: ${h.title}\n${clip(h.content_md, 2500)}`,
+        `[NỘI BỘ ${i + 1}] file: ${h.file_name} | thư mục: ${h.category} | tiêu đề: ${h.title}\n${clip(h.content_md, 3000)}`,
     )
     .join("\n\n---\n\n");
   const persona = o.persona ?? "Bạn là JETBU AI — bộ não thứ 2 của Admin.";
@@ -1170,6 +1170,7 @@ export async function councilBook(o: {
   enterprises?: string[] | undefined;
   cycle?: number | undefined;
   onProgress?: ((p: CouncilProgress) => void) | undefined;
+  doc_ids?: string[] | undefined;
 }) {
   const company = o.company ?? COMPANY_DEFAULT;
   const ents = o.enterprises?.length ? o.enterprises : [...ENTERPRISES];
@@ -1178,17 +1179,32 @@ export async function councilBook(o: {
   const prog = o.onProgress ?? (() => {});
 
   prog({ step: "Tầng 1: tra Kho Tri Thức nội bộ" });
-  const internal = await tier1Search(o.topic, company, undefined, 10);
+  const picked = o.doc_ids?.length ? await pickedDocsEvidence(o.doc_ids, o.topic) : [];
+  const internal = await tier1Search(o.topic, company, undefined, 24);
+  const titles = await listKhoTitles(company).catch(() => [] as KhoTitle[]);
+  const pickedTxt = picked.map((p) => `[file: ${p.file_name}] ${p.title}\n${p.text}`).join("\n\n");
   const ctx = internal
-    .map((h) => `[file: ${h.file_name}] ${h.title}\n${clip(h.content_md, 1800)}`)
+    .map((h) => `[file: ${h.file_name}] ${h.title}\n${clip(h.content_md, 2500)}`)
     .join("\n\n");
+  const catalog = titles
+    .slice(0, 150)
+    .map((t) => `- ${t.title} [file: ${t.file_name}]`)
+    .join("\n");
+  const srcMap = new Map<string, { file_name: string; title: string; chunks: number }>();
+  for (const p of picked) srcMap.set(p.file_name, { file_name: p.file_name, title: p.title, chunks: p.chunks });
+  for (const h of internal) {
+    const ex = srcMap.get(h.file_name);
+    if (ex) ex.chunks += h.chunks ?? 0;
+    else srcMap.set(h.file_name, { file_name: h.file_name, title: h.title, chunks: h.chunks ?? 0 });
+  }
+  const sources_internal = [...srcMap.values()];
   prog({ step: "Tầng 2+3: nguồn mở & kiểm chứng chéo" });
   const { hits } = await tier2Search(o.topic, suggestSources(o.topic), 4);
   const ver = await tier3Verify(o.topic, hits, pool);
   const ext = ver.verified
     .map((h) => `[nguồn: ${h.citation} — ${h.url}] ${clip(h.excerpt, 900)}`)
     .join("\n\n");
-  const evidence = `BẰNG CHỨNG NỘI BỘ:\n${ctx || "(trống)"}\n\nBẰNG CHỨNG NGOÀI ĐÃ KIỂM CHỨNG:\n${ext || "(không có)"}`;
+  const evidence = `${pickedTxt ? `BẰNG CHỨNG BẮT BUỘC (sách Admin chọn):\n${pickedTxt}\n\n` : ""}BẰNG CHỨNG NỘI BỘ:\n${ctx || "(trống)"}\n\nDANH MỤC KHO:\n${catalog || "(trống)"}\n\nBẰNG CHỨNG NGOÀI ĐÃ KIỂM CHỨNG:\n${ext || "(không có)"}\n\nQUY TẮC TRÍCH DẪN: mọi luận điểm lấy từ Kho phải ghi [file: tên_file].`;
 
   // VÒNG 1 — mỗi AI một vai chuyên gia, phân tích xoay quanh 6 cõi
   prog({
