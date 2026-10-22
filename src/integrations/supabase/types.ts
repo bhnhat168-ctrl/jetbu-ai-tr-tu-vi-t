@@ -846,6 +846,53 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_md_chunks: {
+        Row: {
+          category: string
+          chunk_index: number
+          company_code: string
+          content: string
+          created_at: string
+          doc_id: string
+          embedding: string | null
+          fts: unknown
+          heading: string | null
+          id: string
+        }
+        Insert: {
+          category: string
+          chunk_index: number
+          company_code: string
+          content: string
+          created_at?: string
+          doc_id: string
+          embedding?: string | null
+          fts?: unknown
+          heading?: string | null
+          id?: string
+        }
+        Update: {
+          category?: string
+          chunk_index?: number
+          company_code?: string
+          content?: string
+          created_at?: string
+          doc_id?: string
+          embedding?: string | null
+          fts?: unknown
+          heading?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_md_chunks_doc_id_fkey"
+            columns: ["doc_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_md_store"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_md_store: {
         Row: {
           category: string
@@ -1321,6 +1368,11 @@ export type Database = {
     }
     Functions: {
       is_group_admin: { Args: never; Returns: boolean }
+      jetbu_auto_tags: {
+        Args: { p_content: string; p_title: string }
+        Returns: string[]
+      }
+      jetbu_chunk_doc: { Args: { p_doc: string }; Returns: undefined }
       jetbu_norm: { Args: { t: string }; Returns: string }
       jetbu_slug: { Args: { t: string }; Returns: string }
       knowledge_md_stats: {
@@ -1330,6 +1382,17 @@ export type Database = {
           docs: number
           last_at: string
           words: number
+        }[]
+      }
+      knowledge_md_titles: {
+        Args: { p_company?: string }
+        Returns: {
+          category: string
+          file_name: string
+          id: string
+          tags: string[]
+          title: string
+          word_count: number
         }[]
       }
       match_jetbu_knowledge: {
@@ -1360,6 +1423,25 @@ export type Database = {
       practical_publish: {
         Args: { mission: string; token: string }
         Returns: boolean
+      }
+      search_knowledge_chunks: {
+        Args: {
+          p_category?: string
+          p_company?: string
+          p_limit?: number
+          q: string
+          query_embedding?: string
+        }
+        Returns: {
+          category: string
+          chunk_id: string
+          content: string
+          doc_id: string
+          file_name: string
+          heading: string
+          score: number
+          title: string
+        }[]
       }
       search_knowledge_md: {
         Args: {
